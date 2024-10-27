@@ -5,7 +5,6 @@
 #define CHARACTER_WIDTH 64
 #define CHARACTER_HEIGHT 64
 
-
 bool init() {
     // Inicializa o SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
@@ -89,7 +88,7 @@ int main(int argc, char* argv[])
 
     //Get diplay size, maybe make this a func?
     SDL_DisplayMode displayMode;
-    int screenWidth, screenHeight;
+    int screenWidth = 0, screenHeight = 0;
     if (SDL_GetCurrentDisplayMode(0, &displayMode) == 0) {
         screenWidth = displayMode.w;
         screenHeight = displayMode.h;
