@@ -2,8 +2,8 @@
 #include <SDL_image.h>
 #include <iostream>
 
-#define SCREEN_WIDTH 640
-#define SCREEN_HEIGHT 480
+#define SCREEN_WIDTH 1920
+#define SCREEN_HEIGHT 1080
 
 bool init() {
     // Inicializa o SDL
@@ -66,16 +66,16 @@ SDL_Texture* create_texture(SDL_Window* window, SDL_Renderer* renderer, const ch
     return texture;
 }
 
-void update_camera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect player_rect) {
+void update_camera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect player_rect, int bg_width, int bg_height) {
     // Centralizar a câmera no jogador
     camera->x = playerX + player_rect.w / 2 - SCREEN_WIDTH / 2;
     camera->y = playerY + player_rect.h / 2 - SCREEN_HEIGHT / 2;
 
     // Limitar a câmera para não sair dos limites do mundo
-    //if (camera.x < 0) camera.x = 0;
-    //if (camera.y < 0) camera.y = 0;
-    //if (camera.x > WORLD_WIDTH - camera.w) camera.x = WORLD_WIDTH - camera.w;
-    //if (camera.y > WORLD_HEIGHT - camera.h) camera.y = WORLD_HEIGHT - camera.h;
+    if (camera->x < 0) camera->x = 0;
+    if (camera->y < 0) camera->y = 0;
+    if (camera->x > bg_width - camera->w) camera->x = bg_width - camera->w;
+    if (camera->y > bg_height - camera->h) camera->y = bg_height - camera->h;
 }
 
 int main(int argc, char* argv[]) 
@@ -96,15 +96,19 @@ int main(int argc, char* argv[])
 
     //Character
     int velocidade = 5;
-    SDL_Rect player_rect = { 0, 0, 64, 64 }; 
+    SDL_Rect player_rect = { 0, 200, 64, 64 }; 
     SDL_Texture* char_texture = create_texture(window, renderer, "Assets/batata.png");
 
 
     SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
 
 
+
     //Background
     SDL_Texture* bg_texture = create_texture(window, renderer, "Assets/background.png");
+    int bg_width, bg_height;
+    SDL_QueryTexture(bg_texture, NULL, NULL, &bg_width, &bg_height);
+
 
     SDL_Event event;
     while (running) {
@@ -123,7 +127,7 @@ int main(int argc, char* argv[])
         if (keyState[SDL_SCANCODE_LEFT]) player_rect.x -= velocidade;
         if (keyState[SDL_SCANCODE_RIGHT]) player_rect.x += velocidade;
 
-        update_camera(player_rect.x, player_rect.y, &camera, player_rect);
+        update_camera(player_rect.x, player_rect.y, &camera, player_rect, bg_width, bg_height);
 
 
         // Define a cor de fundo (preto)
@@ -134,6 +138,7 @@ int main(int argc, char* argv[])
         //SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
         //SDL_RenderFillRect(renderer, &rect);
         //render_texture(renderer, bg_texture, NULL, NULL);
+        SDL_Rect bg_render_rect = { 0, 0, bg_width, bg_height };
         SDL_RenderCopy(renderer, bg_texture, &camera, nullptr);
 
 
