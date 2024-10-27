@@ -2,10 +2,9 @@
 #include <SDL_image.h>
 #include <iostream>
 
-#define SCREEN_WIDTH 1920
-#define SCREEN_HEIGHT 1080
 #define CHARACTER_WIDTH 64
 #define CHARACTER_HEIGHT 64
+
 
 bool init() {
     // Inicializa o SDL
@@ -15,12 +14,12 @@ bool init() {
     }
 }
 
-SDL_Window* init_window() {
+SDL_Window* init_window(int screenWidth, int screenHeight) {
 
     // Cria a janela
     SDL_Window* window = SDL_CreateWindow("Hello SDL World",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_SHOWN);
+        screenWidth, screenHeight, SDL_WINDOW_SHOWN);
     if (!window) {
         std::cerr << "Erro ao criar janela: " << SDL_GetError() << std::endl;
         SDL_Quit();
@@ -68,10 +67,10 @@ SDL_Texture* create_texture(SDL_Window* window, SDL_Renderer* renderer, const ch
     return texture;
 }
 
-void update_camera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect player_rect, int bg_width, int bg_height) {
+void update_camera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect player_rect, int bg_width, int bg_height, int screenWidth, int screenHeight) {
     // Centralizar a câmera no jogador
-    camera->x = playerX + player_rect.w / 2 - SCREEN_WIDTH / 2;
-    camera->y = playerY + player_rect.h / 2 - SCREEN_HEIGHT / 2;
+    camera->x = playerX + player_rect.w / 2 - screenWidth / 2;
+    camera->y = playerY + player_rect.h / 2 - screenHeight / 2;
 
     // Limitar a câmera para não sair dos limites do mundo
     if (camera->x < 0) camera->x = 0;
@@ -87,7 +86,17 @@ int main(int argc, char* argv[])
         std::cerr << "Erro ao inicializar SDL: " << SDL_GetError() << std::endl;
         return 1;
     }
-    SDL_Window* window = init_window(); 
+
+    //Get diplay size, maybe make this a func?
+    SDL_DisplayMode displayMode;
+    int screenWidth, screenHeight;
+    if (SDL_GetCurrentDisplayMode(0, &displayMode) == 0) {
+        screenWidth = displayMode.w;
+        screenHeight = displayMode.h;
+    }
+    else std::cerr << "Erro ao obter a resolução do monitor: " << SDL_GetError() << std::endl;
+
+    SDL_Window* window = init_window(screenWidth, screenHeight);
     if (!window) return 1;
 
     SDL_Renderer* renderer = init_renderer(window);
@@ -95,7 +104,7 @@ int main(int argc, char* argv[])
 
     
 
-    SDL_Rect camera = { 0, 0, SCREEN_WIDTH, SCREEN_HEIGHT };
+    SDL_Rect camera = { 0, 0, screenWidth, screenHeight };
 
 
     //Background
@@ -136,7 +145,7 @@ int main(int argc, char* argv[])
             player_rect.x += speed;
 
 
-        update_camera(player_rect.x, player_rect.y, &camera, player_rect, bg_width, bg_height);
+        update_camera(player_rect.x, player_rect.y, &camera, player_rect, bg_width, bg_height, screenWidth, screenHeight);
 
 
         // Define a cor de fundo (preto)
