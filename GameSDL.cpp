@@ -4,6 +4,8 @@
 
 #define SCREEN_WIDTH 1920
 #define SCREEN_HEIGHT 1080
+#define CHARACTER_WIDTH 64
+#define CHARACTER_HEIGHT 64
 
 bool init() {
     // Inicializa o SDL
@@ -95,8 +97,8 @@ int main(int argc, char* argv[])
     bool running = true;
 
     //Character
-    int velocidade = 5;
-    SDL_Rect player_rect = { 0, 200, 64, 64 }; 
+    int velocidade = 7;
+    SDL_Rect player_rect = { 0, 200, CHARACTER_WIDTH, CHARACTER_HEIGHT };
     SDL_Texture* char_texture = create_texture(window, renderer, "Assets/batata.png");
 
 
@@ -122,10 +124,18 @@ int main(int argc, char* argv[])
         }
 
         const Uint8* keyState = SDL_GetKeyboardState(NULL);
-        if (keyState[SDL_SCANCODE_UP]) player_rect.y -= velocidade;
-        if (keyState[SDL_SCANCODE_DOWN]) player_rect.y += velocidade;
-        if (keyState[SDL_SCANCODE_LEFT]) player_rect.x -= velocidade;
-        if (keyState[SDL_SCANCODE_RIGHT]) player_rect.x += velocidade;
+        if (keyState[SDL_SCANCODE_UP] && player_rect.y > 0)
+            player_rect.y -= velocidade;
+
+        if (keyState[SDL_SCANCODE_DOWN] && player_rect.y < bg_height - CHARACTER_HEIGHT)
+            player_rect.y += velocidade;
+
+        if (keyState[SDL_SCANCODE_LEFT] && player_rect.x > 0)
+            player_rect.x -= velocidade;
+
+        if (keyState[SDL_SCANCODE_RIGHT] && player_rect.x < bg_width - CHARACTER_WIDTH)
+            player_rect.x += velocidade;
+
 
         update_camera(player_rect.x, player_rect.y, &camera, player_rect, bg_width, bg_height);
 
