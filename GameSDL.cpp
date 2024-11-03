@@ -129,6 +129,7 @@ int main(int argc, char* argv[])
 
     //Character
     int speed = 7;
+    int life = 3;
     batataState currentBatataState = IDLE;
     SDL_Rect batata_rect_src = { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG };
     SDL_Rect batata_rect_dst = { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER };
@@ -148,29 +149,43 @@ int main(int argc, char* argv[])
             if (event.type == SDL_QUIT) {
                 running = false;
             }
+
+
+            if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_F) {
+                life -= 1;
+
+                if (life == 0) {
+                    SDL_DestroyRenderer(renderer);
+                    SDL_DestroyWindow(window);
+                    SDL_Quit();
+                    return 0;
+                }
+            }
         }
 
         const Uint8* keyState = SDL_GetKeyboardState(NULL);
         currentBatataState = IDLE;
-        if (keyState[SDL_SCANCODE_UP] && batata_rect_dst.y > 0){
+        if ( (keyState[SDL_SCANCODE_W] || keyState[SDL_SCANCODE_UP]) && batata_rect_dst.y > 0){
             batata_rect_dst.y -= speed;
             currentBatataState = WALKING;
         }
 
-        if (keyState[SDL_SCANCODE_DOWN] && batata_rect_dst.y < bg_height - CHARACTER_HEIGHT_RENDER) {
+        if ( (keyState[SDL_SCANCODE_S] || keyState[SDL_SCANCODE_DOWN]) && batata_rect_dst.y < bg_height - CHARACTER_HEIGHT_RENDER) {
             batata_rect_dst.y += speed;
             currentBatataState = WALKING;
         }
 
-        if (keyState[SDL_SCANCODE_LEFT] && batata_rect_dst.x > 0) {
+        if ( (keyState[SDL_SCANCODE_A] || keyState[SDL_SCANCODE_LEFT]) && batata_rect_dst.x > 0) {
             batata_rect_dst.x -= speed;
             currentBatataState = WALKING;
         }
 
-        if (keyState[SDL_SCANCODE_RIGHT] && batata_rect_dst.x < bg_width - CHARACTER_WIDTH_RENDER) {
+        if ( (keyState[SDL_SCANCODE_D] || keyState[SDL_SCANCODE_RIGHT]) && batata_rect_dst.x < bg_width - CHARACTER_WIDTH_RENDER) {
             batata_rect_dst.x += speed;
             currentBatataState = WALKING;
         }
+
+
 
 
 
