@@ -2,8 +2,18 @@
 #include <SDL_image.h>
 #include <iostream>
 
-#define CHARACTER_WIDTH 64
-#define CHARACTER_HEIGHT 64
+#define CHARACTER_WIDTH_ORIG    32 //Size of character width in sprite
+#define CHARACTER_HEIGHT_ORIG   32 //Size of character height in sprite
+#define CHARACTER_WIDTH_RENDER  64 //Size of character width in render
+#define CHARACTER_HEIGHT_RENDER 64 //Size of character height in render
+#define ANIMATION_SPEED         160
+#define WALK_FRAME_COUNT        4
+#define IDLE_FRAME_COUNT        2
+
+enum batataState {IDLE, WALKING};
+
+SDL_Window* window      = nullptr;
+SDL_Renderer* renderer  = nullptr;
 
 bool init() {
     // Inicializa o SDL
@@ -11,36 +21,31 @@ bool init() {
         std::cerr << "Erro ao inicializar SDL: " << SDL_GetError() << std::endl;
         return false;
     }
+    return true;
 }
 
-SDL_Window* init_window(int screenWidth, int screenHeight) {
+void init_window(int screenWidth, int screenHeight) {
 
     // Cria a janela
-    SDL_Window* window = SDL_CreateWindow("Hello SDL World",
+    window = SDL_CreateWindow("Hello SDL World",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         screenWidth, screenHeight, SDL_WINDOW_SHOWN);
     if (!window) {
         std::cerr << "Erro ao criar janela: " << SDL_GetError() << std::endl;
         SDL_Quit();
-        return nullptr;
     }
-   
-    return window;
 }
 
-SDL_Renderer* init_renderer(SDL_Window* window) {    // Cria o renderizador
-    SDL_Renderer* renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+void init_renderer() {    // Cria o renderizador
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (!renderer) {
         std::cerr << "Erro ao criar renderizador: " << SDL_GetError() << std::endl;
         SDL_DestroyWindow(window);
         SDL_Quit();
-        return NULL;
     }
-
-    return renderer;
 }
 
-SDL_Texture* create_texture(SDL_Window* window, SDL_Renderer* renderer, const char* image_path) {
+SDL_Texture* create_texture(const char* image_path) {
 
     SDL_Surface* imageSurface = IMG_Load(image_path);
     if (!imageSurface) {
@@ -66,10 +71,10 @@ SDL_Texture* create_texture(SDL_Window* window, SDL_Renderer* renderer, const ch
     return texture;
 }
 
-void update_camera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect player_rect, int bg_width, int bg_height, int screenWidth, int screenHeight) {
+void update_camera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect batata_rect_dst, int bg_width, int bg_height, int screenWidth, int screenHeight) {
     // Centralizar a câmera no jogador
-    camera->x = playerX + player_rect.w / 2 - screenWidth / 2;
-    camera->y = playerY + player_rect.h / 2 - screenHeight / 2;
+    camera->x = playerX + batata_rect_dst.w / 2 - screenWidth / 2;
+    camera->y = playerY + batata_rect_dst.h / 2 - screenHeight / 2;
 
     // Limitar a câmera para não sair dos limites do mundo
     if (camera->x < 0) camera->x = 0;
@@ -77,6 +82,22 @@ void update_camera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect player_r
     if (camera->x > bg_width - camera->w) camera->x = bg_width - camera->w;
     if (camera->y > bg_height - camera->h) camera->y = bg_height - camera->h;
 }
+
+void update_animation(batataState currentState, SDL_Rect& batata_scr_rect, int &frame, Uint32 &lastFrameTime) {
+    Uint32 currentTime = SDL_GetTicks();
+    if (currentTime > lastFrameTime + ANIMATION_SPEED) {
+        if (currentState == WALKING) {
+            frame = (frame + 1) % WALK_FRAME_COUNT;
+            batata_scr_rect.y = 0;
+        }
+        else if (currentState == IDLE) {
+            frame = (frame + 1) % IDLE_FRAME_COUNT;
+            batata_scr_rect.y = CHARACTER_HEIGHT_ORIG;
+        }
+        batata_scr_rect.x = frame * CHARACTER_WIDTH_ORIG;
+        lastFrameTime = currentTime;
+    }
+};
 
 int main(int argc, char* argv[]) 
 {
@@ -95,28 +116,27 @@ int main(int argc, char* argv[])
     }
     else std::cerr << "Erro ao obter a resolução do monitor: " << SDL_GetError() << std::endl;
 
-    SDL_Window* window = init_window(screenWidth, screenHeight);
-    if (!window) return 1;
-
-    SDL_Renderer* renderer = init_renderer(window);
-    if (!renderer) return 1;
-
-    
+    init_window(screenWidth, screenHeight);
+    init_renderer();
 
     SDL_Rect camera = { 0, 0, screenWidth, screenHeight };
 
-
     //Background
-    SDL_Texture* bg_texture = create_texture(window, renderer, "Assets/background.png");
+    SDL_Texture* bg_texture = create_texture("Assets/background.png");
     int bg_width, bg_height;
     SDL_QueryTexture(bg_texture, NULL, NULL, &bg_width, &bg_height);
 
 
     //Character
     int speed = 7;
-    SDL_Rect player_rect = { bg_width / 2, bg_height / 2, CHARACTER_WIDTH, CHARACTER_HEIGHT };
-    SDL_Texture* char_texture = create_texture(window, renderer, "Assets/batata.png");
+    batataState currentBatataState = IDLE;
+    SDL_Rect batata_rect_src = { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG };
+    SDL_Rect batata_rect_dst = { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER };
+    SDL_Texture* batataTexture = create_texture("Assets/batata_spritesheet.png");
 
+    //Frame info
+    int frame = 0;
+    Uint32 lastFrameTime = 0;
 
     SDL_Event event;
     bool running = true;
@@ -131,20 +151,32 @@ int main(int argc, char* argv[])
         }
 
         const Uint8* keyState = SDL_GetKeyboardState(NULL);
-        if (keyState[SDL_SCANCODE_UP] && player_rect.y > 0)
-            player_rect.y -= speed;
+        currentBatataState = IDLE;
+        if (keyState[SDL_SCANCODE_UP] && batata_rect_dst.y > 0){
+            batata_rect_dst.y -= speed;
+            currentBatataState = WALKING;
+        }
 
-        if (keyState[SDL_SCANCODE_DOWN] && player_rect.y < bg_height - CHARACTER_HEIGHT)
-            player_rect.y += speed;
+        if (keyState[SDL_SCANCODE_DOWN] && batata_rect_dst.y < bg_height - CHARACTER_HEIGHT_RENDER) {
+            batata_rect_dst.y += speed;
+            currentBatataState = WALKING;
+        }
 
-        if (keyState[SDL_SCANCODE_LEFT] && player_rect.x > 0)
-            player_rect.x -= speed;
+        if (keyState[SDL_SCANCODE_LEFT] && batata_rect_dst.x > 0) {
+            batata_rect_dst.x -= speed;
+            currentBatataState = WALKING;
+        }
 
-        if (keyState[SDL_SCANCODE_RIGHT] && player_rect.x < bg_width - CHARACTER_WIDTH)
-            player_rect.x += speed;
+        if (keyState[SDL_SCANCODE_RIGHT] && batata_rect_dst.x < bg_width - CHARACTER_WIDTH_RENDER) {
+            batata_rect_dst.x += speed;
+            currentBatataState = WALKING;
+        }
 
 
-        update_camera(player_rect.x, player_rect.y, &camera, player_rect, bg_width, bg_height, screenWidth, screenHeight);
+
+        update_animation(currentBatataState, batata_rect_src, frame, lastFrameTime);
+        update_camera(batata_rect_dst.x, batata_rect_dst.y, &camera, batata_rect_dst, bg_width, bg_height, screenWidth, screenHeight);
+
 
 
         // Define a cor de fundo (preto)
@@ -160,11 +192,11 @@ int main(int argc, char* argv[])
 
 
         SDL_Rect player_render_rect = {
-             player_rect.x - camera.x,
-             player_rect.y - camera.y,
-             player_rect.w, player_rect.h
+             batata_rect_dst.x - camera.x,
+             batata_rect_dst.y - camera.y,
+             batata_rect_dst.w, batata_rect_dst.h
         };
-        SDL_RenderCopy(renderer, char_texture, nullptr, &player_render_rect);
+        SDL_RenderCopy(renderer, batataTexture, &batata_rect_src, &player_render_rect);
 
 
         // Apresenta o conteúdo renderizado
