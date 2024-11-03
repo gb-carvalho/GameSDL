@@ -104,16 +104,16 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\GB\Desktop\Projetos\GameSDL\SDL2-2.30.8\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_image-2.8.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\GB\Desktop\Projetos\GameSDL\SDL2-2.30.8\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_image-2.8.2\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_ttf-2.20.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\GB\Desktop\Projetos\GameSDL\SDL2-2.30.8\lib\x64;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_image-2.8.2\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\GB\Desktop\Projetos\GameSDL\SDL2-2.30.8\lib\x64;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_image-2.8.2\lib\x64;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_ttf-2.20.2\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>SDL2.lib
 ;SDL2main.lib;SDL2_image.lib
 
-;%(AdditionalDependencies)</AdditionalDependencies>
+;SDL2_ttf.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -124,17 +124,17 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\GB\Desktop\Projetos\GameSDL\SDL2-2.30.8\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_image-2.8.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\GB\Desktop\Projetos\GameSDL\SDL2-2.30.8\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_image-2.8.2\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_ttf-2.20.2\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>false</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>C:\Users\GB\Desktop\Projetos\GameSDL\SDL2-2.30.8\lib\x64;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_image-2.8.2\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>C:\Users\GB\Desktop\Projetos\GameSDL\SDL2-2.30.8\lib\x64;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_image-2.8.2\lib\x64;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_ttf-2.20.2\lib\x64;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>SDL2.lib
 ;SDL2main.lib;SDL2_image.lib
-
+;SDL2_ttf.lib
 ;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

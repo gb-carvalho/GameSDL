@@ -1,5 +1,6 @@
 #include <SDL.h>
 #include <SDL_image.h>
+#include <SDL_ttf.h>
 #include <iostream>
 
 #define CHARACTER_WIDTH_ORIG    32 //Size of character width in sprite
@@ -107,6 +108,12 @@ int main(int argc, char* argv[])
         return 1;
     }
 
+    if (TTF_Init() == -1) {
+        std::cerr << "Erro ao inicializar SDL_ttf: " << TTF_GetError() << std::endl;
+        return -1;
+    }
+
+
     //Get diplay size, maybe make this a func?
     SDL_DisplayMode displayMode;
     int screenWidth = 0, screenHeight = 0;
@@ -157,6 +164,7 @@ int main(int argc, char* argv[])
                 if (life == 0) {
                     SDL_DestroyRenderer(renderer);
                     SDL_DestroyWindow(window);
+                    TTF_Quit();
                     SDL_Quit();
                     return 0;
                 }
@@ -185,14 +193,8 @@ int main(int argc, char* argv[])
             currentBatataState = WALKING;
         }
 
-
-
-
-
         update_animation(currentBatataState, batata_rect_src, frame, lastFrameTime);
         update_camera(batata_rect_dst.x, batata_rect_dst.y, &camera, batata_rect_dst, bg_width, bg_height, screenWidth, screenHeight);
-
-
 
         // Define a cor de fundo (preto)
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
@@ -204,7 +206,6 @@ int main(int argc, char* argv[])
         //render_texture(renderer, bg_texture, NULL, NULL);
         SDL_Rect bg_render_rect = { 0, 0, bg_width, bg_height };
         SDL_RenderCopy(renderer, bg_texture, &camera, nullptr);
-
 
         SDL_Rect player_render_rect = {
              batata_rect_dst.x - camera.x,
@@ -222,6 +223,7 @@ int main(int argc, char* argv[])
     // Limpeza
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
+    TTF_Quit();
     SDL_Quit();
 
     return 0;
