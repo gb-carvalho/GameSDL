@@ -103,12 +103,12 @@ int main(int argc, char* argv[])
 {
 
     if (!init()) {
-        std::cerr << "Erro ao inicializar SDL: " << SDL_GetError() << std::endl;
+        SDL_Log("Erro ao inicializar SDL: %s", SDL_GetError());
         return 1;
     }
 
     if (TTF_Init() == -1) {
-        std::cerr << "Erro ao inicializar SDL_ttf: " << TTF_GetError() << std::endl;
+        SDL_Log("Erro ao inicializar SDL_ttf: %s", TTF_GetError());
         return -1;
     }
 
