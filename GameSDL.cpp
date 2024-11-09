@@ -19,38 +19,37 @@ SDL_Renderer* renderer  = nullptr;
 bool init() {
     // Inicializa o SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        std::cerr << "Erro ao inicializar SDL: " << SDL_GetError() << std::endl;
+        SDL_Log("Erro ao inicializar SDL: %s", SDL_GetError());
         return false;
     }
     return true;
 }
 
 void init_window(int screenWidth, int screenHeight) {
-
     // Cria a janela
     window = SDL_CreateWindow("Hello SDL World",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         screenWidth, screenHeight, SDL_WINDOW_SHOWN);
     if (!window) {
-        std::cerr << "Erro ao criar janela: " << SDL_GetError() << std::endl;
+        SDL_Log("Erro ao criar janela: %s", SDL_GetError());
         SDL_Quit();
     }
 }
 
-void init_renderer() {    // Cria o renderizador
+void init_renderer() {
+    // Cria o renderizador
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (!renderer) {
-        std::cerr << "Erro ao criar renderizador: " << SDL_GetError() << std::endl;
+        SDL_Log("Erro ao criar renderizador: %s", SDL_GetError());
         SDL_DestroyWindow(window);
         SDL_Quit();
     }
 }
 
 SDL_Texture* create_texture(const char* image_path) {
-
     SDL_Surface* imageSurface = IMG_Load(image_path);
     if (!imageSurface) {
-        std::cerr << "Erro ao carregar imagem: " << IMG_GetError() << std::endl;
+        SDL_Log("Erro ao carregar imagem: %s", IMG_GetError());
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
@@ -62,7 +61,7 @@ SDL_Texture* create_texture(const char* image_path) {
     SDL_FreeSurface(imageSurface);  // Liberar a superfície da memória
 
     if (!texture) {
-        std::cerr << "Erro ao criar textura: " << SDL_GetError() << std::endl;
+        SDL_Log("Erro ao criar textura: %s", SDL_GetError());
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
@@ -113,7 +112,6 @@ int main(int argc, char* argv[])
         return -1;
     }
 
-
     //Get diplay size, maybe make this a func?
     SDL_DisplayMode displayMode;
     int screenWidth = 0, screenHeight = 0;
@@ -121,7 +119,7 @@ int main(int argc, char* argv[])
         screenWidth = displayMode.w;
         screenHeight = displayMode.h;
     }
-    else std::cerr << "Erro ao obter a resolução do monitor: " << SDL_GetError() << std::endl;
+    else SDL_Log("Erro ao obter a resolução do monitor: %s", SDL_GetError());
 
     init_window(screenWidth, screenHeight);
     init_renderer();
@@ -146,9 +144,13 @@ int main(int argc, char* argv[])
     int frame = 0;
     Uint32 lastFrameTime = 0;
 
+    //Font
+    TTF_Font* font = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf",24);
+
     SDL_Event event;
     bool running = true;
     while (running) {
+
 
         while (SDL_PollEvent(&event)) {
 
