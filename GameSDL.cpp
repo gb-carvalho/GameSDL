@@ -19,7 +19,7 @@ SDL_Renderer* renderer  = nullptr;
 bool init() {
     // Inicializa o SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        SDL_Log("Erro ao inicializar SDL: %s", SDL_GetError());
+        SDL_Log("Erro ao init SDL: %s", SDL_GetError());
         return false;
     }
     return true;
@@ -31,7 +31,7 @@ void init_window(int screenWidth, int screenHeight) {
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
         screenWidth, screenHeight, SDL_WINDOW_SHOWN);
     if (!window) {
-        SDL_Log("Erro ao criar janela: %s", SDL_GetError());
+        SDL_Log("Error ao creating window: %s", SDL_GetError());
         SDL_Quit();
     }
 }
@@ -40,7 +40,7 @@ void init_renderer() {
     // Cria o renderizador
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if (!renderer) {
-        SDL_Log("Erro ao criar renderizador: %s", SDL_GetError());
+        SDL_Log("Error creating render: %s", SDL_GetError());
         SDL_DestroyWindow(window);
         SDL_Quit();
     }
@@ -49,7 +49,7 @@ void init_renderer() {
 SDL_Texture* create_texture(const char* image_path) {
     SDL_Surface* imageSurface = IMG_Load(image_path);
     if (!imageSurface) {
-        SDL_Log("Erro ao carregar imagem: %s", IMG_GetError());
+        SDL_Log("Error loading image: %s", IMG_GetError());
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
@@ -61,7 +61,7 @@ SDL_Texture* create_texture(const char* image_path) {
     SDL_FreeSurface(imageSurface);  // Liberar a superfície da memória
 
     if (!texture) {
-        SDL_Log("Erro ao criar textura: %s", SDL_GetError());
+        SDL_Log("Error creating texture: %s", SDL_GetError());
         SDL_DestroyRenderer(renderer);
         SDL_DestroyWindow(window);
         SDL_Quit();
@@ -102,13 +102,10 @@ void update_animation(batataState currentState, SDL_Rect& batata_scr_rect, int &
 int main(int argc, char* argv[]) 
 {
 
-    if (!init()) {
-        SDL_Log("Erro ao inicializar SDL: %s", SDL_GetError());
-        return 1;
-    }
+    init();
 
     if (TTF_Init() == -1) {
-        SDL_Log("Erro ao inicializar SDL_ttf: %s", TTF_GetError());
+        SDL_Log("Error init SDL_ttf: %s", TTF_GetError());
         return -1;
     }
 
@@ -119,7 +116,7 @@ int main(int argc, char* argv[])
         screenWidth = displayMode.w;
         screenHeight = displayMode.h;
     }
-    else SDL_Log("Erro ao obter a resolução do monitor: %s", SDL_GetError());
+    else SDL_Log("Error getting monitor resolution: %s", SDL_GetError());
 
     init_window(screenWidth, screenHeight);
     init_renderer();
@@ -146,6 +143,13 @@ int main(int argc, char* argv[])
 
     //Font
     TTF_Font* font = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf",24);
+    if (!font) {
+        SDL_Log("Error loading font: %s", TTF_GetError());
+        SDL_DestroyRenderer(renderer);
+        SDL_DestroyWindow(window);
+        TTF_Quit();
+        SDL_Quit();
+    }
 
     SDL_Event event;
     bool running = true;
