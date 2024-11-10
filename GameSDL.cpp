@@ -1,4 +1,5 @@
 #include <SDL.h>
+#include <string>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 #include <iostream>
@@ -46,7 +47,7 @@ void init_renderer() {
     }
 }
 
-SDL_Texture* create_texture(const char* image_path) {
+SDL_Texture* create_texture_img(const char* image_path) {
     SDL_Surface* imageSurface = IMG_Load(image_path);
     if (!imageSurface) {
         SDL_Log("Error loading image: %s", IMG_GetError());
@@ -69,6 +70,20 @@ SDL_Texture* create_texture(const char* image_path) {
     }
 
     return texture;
+}
+
+SDL_Surface* create_text_surface(TTF_Font* font, const char* text, int r, int g, int b) {
+    SDL_Color color = { r, g, b };
+    SDL_Surface* surface = TTF_RenderText_Solid(font, text, color);
+    return surface;
+}
+
+SDL_Texture* update_text_texture(TTF_Font* font, SDL_Rect& destRectLifeText, std::string text) {
+    SDL_Surface* life_text_surface = create_text_surface(font, text.c_str(), 255, 255, 255);
+    SDL_Texture* life_text_texture = SDL_CreateTextureFromSurface(renderer, life_text_surface);
+    destRectLifeText = { 100, 100, life_text_surface->w, life_text_surface->h };
+    SDL_FreeSurface(life_text_surface);
+    return life_text_texture;
 }
 
 void update_camera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect batata_rect_dst, int bg_width, int bg_height, int screenWidth, int screenHeight) {
@@ -124,7 +139,7 @@ int main(int argc, char* argv[])
     SDL_Rect camera = { 0, 0, screenWidth, screenHeight };
 
     //Background
-    SDL_Texture* bg_texture = create_texture("Assets/background.png");
+    SDL_Texture* bg_texture = create_texture_img("Assets/background.png");
     int bg_width, bg_height;
     SDL_QueryTexture(bg_texture, NULL, NULL, &bg_width, &bg_height);
 
@@ -135,7 +150,7 @@ int main(int argc, char* argv[])
     batataState currentBatataState = IDLE;
     SDL_Rect batata_rect_src = { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG };
     SDL_Rect batata_rect_dst = { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER };
-    SDL_Texture* batataTexture = create_texture("Assets/batata_spritesheet.png");
+    SDL_Texture* batataTexture = create_texture_img("Assets/batata_spritesheet.png");
 
     //Frame info
     int frame = 0;
@@ -151,10 +166,13 @@ int main(int argc, char* argv[])
         SDL_Quit();
     }
 
+    SDL_Rect destRectLifeText;
+    std::string life_text_string = "Lifes: " + std::to_string(life);
+    SDL_Texture* life_text_texture = update_text_texture(font, destRectLifeText, life_text_string);
+
     SDL_Event event;
     bool running = true;
     while (running) {
-
 
         while (SDL_PollEvent(&event)) {
 
@@ -163,9 +181,11 @@ int main(int argc, char* argv[])
                 running = false;
             }
 
-
             if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_F) {
                 life -= 1;
+
+                life_text_string = "Lifes: " + std::to_string(life);
+                life_text_texture = update_text_texture(font, destRectLifeText, life_text_string);
 
                 if (life == 0) {
                     SDL_DestroyRenderer(renderer);
@@ -202,16 +222,13 @@ int main(int argc, char* argv[])
         update_animation(currentBatataState, batata_rect_src, frame, lastFrameTime);
         update_camera(batata_rect_dst.x, batata_rect_dst.y, &camera, batata_rect_dst, bg_width, bg_height, screenWidth, screenHeight);
 
-        // Define a cor de fundo (preto)
         SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
         SDL_RenderClear(renderer);
 
-        // Desenha um quadrado vermelho no centro da janela
-        //SDL_SetRenderDrawColor(renderer, 255, 255, 255, 255);
-        //SDL_RenderFillRect(renderer, &rect);
-        //render_texture(renderer, bg_texture, NULL, NULL);
         SDL_Rect bg_render_rect = { 0, 0, bg_width, bg_height };
         SDL_RenderCopy(renderer, bg_texture, &camera, nullptr);
+        SDL_RenderCopy(renderer, life_text_texture, nullptr, &destRectLifeText);
+
 
         SDL_Rect player_render_rect = {
              batata_rect_dst.x - camera.x,
