@@ -118,6 +118,23 @@ void UpdateCamera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect batata_re
     if (camera->y > bg_height - camera->h) camera->y = bg_height - camera->h;
 }
 
+void UpdateEnemyPosition(SDL_Rect* enemy_rect_dst, SDL_Rect player_rect,int enemy_speed) {
+    // Calcula a direção em que o inimigo deve se mover
+    float diff_x = static_cast<float>(player_rect.x - enemy_rect_dst->x);
+    float diff_y = static_cast<float>(player_rect.y - enemy_rect_dst->y);
+
+    // Calcula a magnitude (comprimento do vetor)
+    float magnitude = sqrt(diff_x * diff_x + diff_y * diff_y);
+
+    // Verifica se a magnitude é maior que zero antes de normalizar
+
+    if (magnitude > 30) {
+        // Normaliza a direção e move o inimigo
+        enemy_rect_dst->x += static_cast<int>((diff_x / magnitude) * enemy_speed);
+        enemy_rect_dst->y += static_cast<int>((diff_y / magnitude) * enemy_speed);
+    }
+};
+
 void UpdateAnimation(batataState current_state, SDL_Rect& src_rect, int &frame, Uint32 &last_frame_time, int width, int height, 
                      int walk_frame_count, int idle_frame_count) 
 {
@@ -282,12 +299,15 @@ int main(int argc, char* argv[])
         };
         SDL_RenderCopy(g_renderer, batata_texture, &batata_rect_src, &player_render_rect);
 
+
+        UpdateEnemyPosition(&enemy_rect_dst, batata_rect_dst, enemy_speed);
         SDL_Rect enemy_render_rect = {
             enemy_rect_dst.x - camera.x,
             enemy_rect_dst.y - camera.y,
             enemy_rect_dst.w + 10,
             enemy_rect_dst.h + 10
         };
+
         SDL_RenderCopy(g_renderer, enemy_texture, &enemy_rect_src, &enemy_render_rect);
 
         if (CheckCollision(player_render_rect, enemy_render_rect)) {
