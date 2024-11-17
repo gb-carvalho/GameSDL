@@ -110,16 +110,16 @@ void UpdateCamera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect batata_re
     if (camera->y > bg_height - camera->h) camera->y = bg_height - camera->h;
 }
 
-void UpdateAnimation(batataState current_state, SDL_Rect& batata_scr_rect, int &frame, Uint32 &last_frame_time) {
+void UpdateAnimation(batataState current_state, SDL_Rect& batata_src_rect, int &frame, Uint32 &last_frame_time) {
     Uint32 current_time = SDL_GetTicks();
     if (current_time > last_frame_time + ANIMATION_SPEED) {
         if (current_state == WALKING) {
             frame = (frame + 1) % WALK_FRAME_COUNT;
-            batata_scr_rect.y = 0;
+            batata_src_rect.y = 0;
         }
         else if (current_state == IDLE) {
             frame = (frame + 1) % IDLE_FRAME_COUNT;
-            batata_scr_rect.y = CHARACTER_HEIGHT_ORIG;
+            batata_src_rect.y = CHARACTER_HEIGHT_ORIG;
         }
         batata_scr_rect.x = frame * CHARACTER_WIDTH_ORIG;
         last_frame_time = current_time;
