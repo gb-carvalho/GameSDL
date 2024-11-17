@@ -12,9 +12,23 @@
 #define ENEMY_MAGE_WIDTH_ORIG  85
 #define ENEMY_MAGE_HEIGHT_ORIG 94
 
-#define ANIMATION_SPEED         160
-#define WALK_FRAME_COUNT        4
-#define IDLE_FRAME_COUNT        2
+#define ANIMATION_SPEED  160
+#define WALK_FRAME_COUNT 4
+#define IDLE_FRAME_COUNT 2
+
+#define PROJECTILE_DELAY 1000
+#define PROJECTILE_SPEED 10
+#define MAX_PROJECTILES  100
+
+struct Projectile
+{
+    SDL_Rect rect;
+    float dir_x, dir_y;
+    bool active;
+};
+
+Projectile projectiles[MAX_PROJECTILES];
+Uint32 last_projectile_time = 0;
 
 enum batataState {IDLE, WALKING};
 
@@ -169,6 +183,41 @@ void UpdateLife(int& life, SDL_Texture*& life_text_texture, TTF_Font* font, SDL_
     }
 }
 
+
+
+
+void FireProjectile(SDL_Rect player_rect, SDL_Rect enemy_rect)
+{
+    Uint32 current_time = SDL_GetTicks();
+    if ( current_time > last_projectile_time + PROJECTILE_DELAY) {
+        for (int i = 0; i < MAX_PROJECTILES; i++) {
+            if (!projectiles[i].active) {
+                projectiles[i].rect = { player_rect.x + player_rect.w / 2, player_rect.y + player_rect.h / 2, 10, 10};
+                projectiles[i].active = true;
+                break;
+            }
+        }
+        last_projectile_time = current_time;
+    }
+
+}
+
+void RenderProjectiles(SDL_Rect camera)
+{
+    SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255); // Vermelho
+    for (int i = 0; i < MAX_PROJECTILES; i++) {
+        if (projectiles[i].active) {
+            SDL_Rect render_rect = {
+                projectiles[i].rect.x - camera.x, // Ajusta a posição X com base na câmera
+                projectiles[i].rect.y - camera.y, // Ajusta a posição Y com base na câmera
+                projectiles[i].rect.w,
+                projectiles[i].rect.h
+            };
+            SDL_RenderFillRect(g_renderer, &render_rect);
+        }
+    }
+}
+
 int main(int argc, char* argv[]) 
 {
 
@@ -211,7 +260,6 @@ int main(int argc, char* argv[])
     SDL_Rect enemy_rect_src = { 0, 0, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG };
     SDL_Rect enemy_rect_dst = { bg_width / 2 - 300, bg_height / 2, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG };
     SDL_Texture* enemy_texture = CreateTextureImg("Assets/mage_spritesheet_85x94.png");
-
 
     //Frame info
     int frame = 0;
@@ -318,6 +366,9 @@ int main(int argc, char* argv[])
                 last_damage_time = current_time;
             }
         }
+
+        FireProjectile(batata_rect_dst, enemy_rect_dst);
+        RenderProjectiles(camera);
 
         // Apresenta o conteúdo renderizado
         SDL_RenderPresent(g_renderer);
