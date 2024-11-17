@@ -121,7 +121,7 @@ void UpdateAnimation(batataState current_state, SDL_Rect& batata_src_rect, int &
             frame = (frame + 1) % IDLE_FRAME_COUNT;
             batata_src_rect.y = CHARACTER_HEIGHT_ORIG;
         }
-        batata_scr_rect.x = frame * CHARACTER_WIDTH_ORIG;
+        batata_src_rect.x = frame * CHARACTER_WIDTH_ORIG;
         last_frame_time = current_time;
     }
 };
