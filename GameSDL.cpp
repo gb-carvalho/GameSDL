@@ -9,7 +9,7 @@
 #define CHARACTER_WIDTH_RENDER  64 //Size of character width in render
 #define CHARACTER_HEIGHT_RENDER 64 //Size of character height in render
 
-#define ENEMY_MAGE_WIDTH_ORIG  94
+#define ENEMY_MAGE_WIDTH_ORIG  85
 #define ENEMY_MAGE_HEIGHT_ORIG 94
 
 #define ANIMATION_SPEED         160
@@ -21,7 +21,8 @@ enum batataState {IDLE, WALKING};
 SDL_Window* g_window      = nullptr;
 SDL_Renderer* g_renderer  = nullptr;
 
-bool Init() {
+bool Init() 
+{
     // Inicializa o SDL
     if (SDL_Init(SDL_INIT_VIDEO) < 0) {
         SDL_Log("Erro ao init SDL: %s", SDL_GetError());
@@ -30,7 +31,8 @@ bool Init() {
     return true;
 }
 
-void InitWindow(int screen_width, int screen_height) {
+void InitWindow(int screen_width, int screen_height) 
+{
     // Cria a janela
     g_window = SDL_CreateWindow("Hello SDL World",
         SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
@@ -41,7 +43,8 @@ void InitWindow(int screen_width, int screen_height) {
     }
 }
 
-void InitRenderer() {
+void InitRenderer() 
+{
     // Cria o renderizador
     g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED);
     if (!g_renderer) {
@@ -51,7 +54,8 @@ void InitRenderer() {
     }
 }
 
-SDL_Texture* CreateTextureImg(const char* image_path) {
+SDL_Texture* CreateTextureImg(const char* image_path) 
+{
     SDL_Surface* image_surface = IMG_Load(image_path);
     if (!image_surface) {
         SDL_Log("Error loading image: %s", IMG_GetError());
@@ -76,13 +80,15 @@ SDL_Texture* CreateTextureImg(const char* image_path) {
     return texture;
 }
 
-SDL_Surface* CreateTextSurface(TTF_Font* font, const char* text, int r, int g, int b) {
+SDL_Surface* CreateTextSurface(TTF_Font* font, const char* text, int r, int g, int b) 
+{
     SDL_Color color = { r, g, b };
     SDL_Surface* surface = TTF_RenderText_Solid(font, text, color);
     return surface;
 }
 
-SDL_Texture* UpdateTextTexture(TTF_Font* font, SDL_Rect& dest_rect_life_text, std::string text) {
+SDL_Texture* UpdateTextTexture(TTF_Font* font, SDL_Rect& dest_rect_life_text, std::string text) 
+{
     SDL_Surface* life_text_surface = CreateTextSurface(font, text.c_str(), 255, 255, 255);
     SDL_Texture* life_text_texture = SDL_CreateTextureFromSurface(g_renderer, life_text_surface);
     dest_rect_life_text = { 100, 100, life_text_surface->w, life_text_surface->h };
@@ -90,7 +96,8 @@ SDL_Texture* UpdateTextTexture(TTF_Font* font, SDL_Rect& dest_rect_life_text, st
     return life_text_texture;
 }
 
-bool CheckCollision(SDL_Rect a, SDL_Rect b) {
+bool CheckCollision(SDL_Rect a, SDL_Rect b) 
+{
     return (a.x + a.w >= b.x &&
             b.x + b.w >= a.x &&
             a.y + a.h >= b.y &&
@@ -98,7 +105,8 @@ bool CheckCollision(SDL_Rect a, SDL_Rect b) {
         );
 }
 
-void UpdateCamera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect batata_rect_dst, int bg_width, int bg_height, int screen_width, int screen_height) {
+void UpdateCamera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect batata_rect_dst, int bg_width, int bg_height, int screen_width, int screen_height) 
+{
     // Centralizar a câmera no jogador
     camera->x = playerX + batata_rect_dst.w / 2 - screen_width / 2;
     camera->y = playerY + batata_rect_dst.h / 2 - screen_height / 2;
@@ -110,21 +118,39 @@ void UpdateCamera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect batata_re
     if (camera->y > bg_height - camera->h) camera->y = bg_height - camera->h;
 }
 
-void UpdateAnimation(batataState current_state, SDL_Rect& batata_src_rect, int &frame, Uint32 &last_frame_time) {
+void UpdateAnimation(batataState current_state, SDL_Rect& src_rect, int &frame, Uint32 &last_frame_time, int width, int height, 
+                     int walk_frame_count, int idle_frame_count) 
+{
     Uint32 current_time = SDL_GetTicks();
     if (current_time > last_frame_time + ANIMATION_SPEED) {
         if (current_state == WALKING) {
-            frame = (frame + 1) % WALK_FRAME_COUNT;
-            batata_src_rect.y = 0;
+            frame = (frame + 1) % walk_frame_count;
+            src_rect.y = 0;
         }
         else if (current_state == IDLE) {
-            frame = (frame + 1) % IDLE_FRAME_COUNT;
-            batata_src_rect.y = CHARACTER_HEIGHT_ORIG;
+            frame = (frame + 1) % idle_frame_count;
+            src_rect.y = height;
         }
-        batata_src_rect.x = frame * CHARACTER_WIDTH_ORIG;
+        src_rect.x = frame * width;
         last_frame_time = current_time;
     }
 };
+
+void UpdateLife(int& life, SDL_Texture*& life_text_texture, TTF_Font* font, SDL_Rect& dest_text_life_text)
+{
+    // Atualiza o texto de vida
+    std::string life_text_string = "Lifes: " + std::to_string(life);
+    life_text_texture = UpdateTextTexture(font, dest_text_life_text, life_text_string);
+
+    // Verifica se a vida acabou
+    if (life == 0) {
+        SDL_DestroyRenderer(g_renderer);
+        SDL_DestroyWindow(g_window);
+        TTF_Quit();
+        SDL_Quit();
+        exit(0); // Encerra o programa
+    }
+}
 
 int main(int argc, char* argv[]) 
 {
@@ -166,12 +192,16 @@ int main(int argc, char* argv[])
     //Enemy
     int enemy_speed = 5;
     SDL_Rect enemy_rect_src = { 0, 0, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG };
-    SDL_Rect enemy_rect_dst = { bg_width / 2 - 100, bg_height / 2 - 100, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG };
-    SDL_Texture* enemy_Texture = CreateTextureImg("Assets/mage_spritesheet_85x94.png");
+    SDL_Rect enemy_rect_dst = { bg_width / 2 - 300, bg_height / 2, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG };
+    SDL_Texture* enemy_texture = CreateTextureImg("Assets/mage_spritesheet_85x94.png");
+
 
     //Frame info
     int frame = 0;
     Uint32 last_frame_time = 0;
+    int frame_enemy = 0;
+    Uint32 last_frame_time_enemy = 0;
+
 
     //Font
     TTF_Font* font = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf",24);
@@ -186,6 +216,9 @@ int main(int argc, char* argv[])
     SDL_Rect dest_tect_life_text;
     std::string life_text_string = "Lifes: " + std::to_string(life);
     SDL_Texture* life_text_texture = UpdateTextTexture(font, dest_tect_life_text, life_text_string);
+
+    Uint32 last_damage_time = 0;
+    const Uint32 damage_cooldown = 1000;
 
     SDL_Event event;
     bool running = true;
@@ -204,13 +237,7 @@ int main(int argc, char* argv[])
                 life_text_string = "Lifes: " + std::to_string(life);
                 life_text_texture = UpdateTextTexture(font, dest_tect_life_text, life_text_string);
 
-                if (life == 0) {
-                    SDL_DestroyRenderer(g_renderer);
-                    SDL_DestroyWindow(g_window);
-                    TTF_Quit();
-                    SDL_Quit();
-                    return 0;
-                }
+                UpdateLife(life, life_text_texture, font, dest_tect_life_text);
             }
         }
 
@@ -236,7 +263,8 @@ int main(int argc, char* argv[])
             current_batata_state = WALKING;
         }
 
-        UpdateAnimation(current_batata_state, batata_rect_src, frame, last_frame_time);
+        UpdateAnimation(current_batata_state, batata_rect_src, frame, last_frame_time, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG, WALK_FRAME_COUNT, IDLE_FRAME_COUNT);
+        UpdateAnimation(WALKING, enemy_rect_src, frame_enemy, last_frame_time_enemy, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG, 8, 8);
         UpdateCamera(batata_rect_dst.x, batata_rect_dst.y, &camera, batata_rect_dst, bg_width, bg_height, screen_width, screen_height);
 
         SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
@@ -254,6 +282,22 @@ int main(int argc, char* argv[])
         };
         SDL_RenderCopy(g_renderer, batata_texture, &batata_rect_src, &player_render_rect);
 
+        SDL_Rect enemy_render_rect = {
+            enemy_rect_dst.x - camera.x,
+            enemy_rect_dst.y - camera.y,
+            enemy_rect_dst.w + 10,
+            enemy_rect_dst.h + 10
+        };
+        SDL_RenderCopy(g_renderer, enemy_texture, &enemy_rect_src, &enemy_render_rect);
+
+        if (CheckCollision(player_render_rect, enemy_render_rect)) {
+            Uint32 current_time = SDL_GetTicks();
+            if (current_time > last_damage_time + damage_cooldown) {
+                life -= 1;
+                UpdateLife(life, life_text_texture, font, dest_tect_life_text);
+                last_damage_time = current_time;
+            }
+        }
 
         // Apresenta o conteúdo renderizado
         SDL_RenderPresent(g_renderer);
