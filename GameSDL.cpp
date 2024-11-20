@@ -30,10 +30,55 @@ struct Projectile
 Projectile projectiles[MAX_PROJECTILES];
 Uint32 last_projectile_time = 0;
 
-enum batataState {IDLE, WALKING};
+enum batataState { IDLE, WALKING };
 
-SDL_Window* g_window      = nullptr;
-SDL_Renderer* g_renderer  = nullptr;
+SDL_Window* g_window = nullptr;
+SDL_Renderer* g_renderer = nullptr;
+
+class Entity {
+public:
+    int speed;
+    int life;
+    SDL_Rect rect_src;
+    SDL_Rect rect_dst;
+    SDL_Texture* texture;
+
+    Entity(int spd, int lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex)
+        : speed(spd), life(lfe), rect_src(src), rect_dst(dst), texture(tex) {}
+
+    virtual ~Entity() {
+        SDL_DestroyTexture(texture);
+    }
+
+    void render(SDL_Renderer* renderer) {
+        SDL_RenderCopy(renderer, texture, &rect_src, &rect_dst);
+    }
+};
+
+class Character : public Entity {
+public:
+    batataState current_state;
+
+    Character(int spd, int lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, batataState state)
+        : Entity(spd, lfe, src, dst, tex), current_state(state) {}
+
+    void updateState(batataState newState) {
+        current_state = newState;
+    }
+};
+
+// Classe para inimigos (herda de Entity)
+class Enemy : public Entity {
+public:
+    bool is_active;
+
+    Enemy(int spd, int lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active)
+        : Entity(spd, lfe, src, dst, tex), is_active(active) {}
+
+    void deactivate() {
+        is_active = false;
+    }
+};
 
 bool Init() 
 {
@@ -232,7 +277,7 @@ void UpdateProjectiles(int width_limit, int height_limit)
     }
 }
 
-void CheckProjectileCollisionWithEnemy(SDL_Rect enemy_rect, int &enemy_life, int &active)
+void CheckProjectileCollisionWithEnemy(SDL_Rect enemy_rect, int &enemy_life, bool &active)
 {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         if (projectiles[i].active && CheckCollision(projectiles[i].rect, enemy_rect)) { 
@@ -275,28 +320,25 @@ int main(int argc, char* argv[])
     int bg_width, bg_height;
     SDL_QueryTexture(bg_texture, NULL, NULL, &bg_width, &bg_height);
 
-    //Character
-    int speed = 7;
-    int life = 3;
-    batataState current_batata_state = IDLE;
-    SDL_Rect batata_rect_src = { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG };
-    SDL_Rect batata_rect_dst = { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER };
-    SDL_Texture* batata_texture = CreateTextureImg("Assets/batata_spritesheet.png");
 
-    //Enemy
-    int enemy_speed = 5;
-    SDL_Rect enemy_rect_src = { 0, 0, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG };
-    SDL_Rect enemy_rect_dst = { bg_width / 2 - 300, bg_height / 2, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG };
-    SDL_Texture* enemy_texture = CreateTextureImg("Assets/mage_spritesheet_85x94.png");
-    int enemy_life = 5;
-    int enemy_active = 1;
+    Character batata{7, 3, 
+        { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG }, //rect_src
+        { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER }, //rect_dst
+        CreateTextureImg("Assets/batata_spritesheet.png"), //texture
+        IDLE};
+
+    Enemy mage{5, 5,
+        { 0, 0, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG },  //rect_src
+        { bg_width / 2 - 300, bg_height / 2, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG }, //rect_dst
+        CreateTextureImg("Assets/mage_spritesheet_85x94.png"), //texture
+        1
+    };
 
     //Frame info
     int frame = 0;
     Uint32 last_frame_time = 0;
     int frame_enemy = 0;
     Uint32 last_frame_time_enemy = 0;
-
 
     //Font
     TTF_Font* font = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf",24);
@@ -309,7 +351,7 @@ int main(int argc, char* argv[])
     }
 
     SDL_Rect dest_tect_life_text;
-    std::string life_text_string = "Lifes: " + std::to_string(life);
+    std::string life_text_string = "Lifes: " + std::to_string(batata.life);
     SDL_Texture* life_text_texture = UpdateTextTexture(font, dest_tect_life_text, life_text_string);
 
     Uint32 last_damage_time = 0;
@@ -325,42 +367,33 @@ int main(int argc, char* argv[])
             if (event.type == SDL_QUIT) {
                 running = false;
             }
-
-            if (event.type == SDL_KEYDOWN && event.key.keysym.scancode == SDL_SCANCODE_F) {
-                life -= 1;
-
-                life_text_string = "Lifes: " + std::to_string(life);
-                life_text_texture = UpdateTextTexture(font, dest_tect_life_text, life_text_string);
-
-                UpdateLife(life, life_text_texture, font, dest_tect_life_text);
-            }
         }
 
         const Uint8* keyState = SDL_GetKeyboardState(NULL);
-        current_batata_state = IDLE;
-        if ( (keyState[SDL_SCANCODE_W] || keyState[SDL_SCANCODE_UP]) && batata_rect_dst.y > 0){
-            batata_rect_dst.y -= speed;
-            current_batata_state = WALKING;
+        batata.current_state = IDLE;
+        if ( (keyState[SDL_SCANCODE_W] || keyState[SDL_SCANCODE_UP]) && batata.rect_dst.y > 0){
+            batata.rect_dst.y -= batata.speed;
+            batata.current_state = WALKING;
         }
 
-        if ( (keyState[SDL_SCANCODE_S] || keyState[SDL_SCANCODE_DOWN]) && batata_rect_dst.y < bg_height - CHARACTER_HEIGHT_RENDER) {
-            batata_rect_dst.y += speed;
-            current_batata_state = WALKING;
+        if ( (keyState[SDL_SCANCODE_S] || keyState[SDL_SCANCODE_DOWN]) && batata.rect_dst.y < bg_height - CHARACTER_HEIGHT_RENDER) {
+            batata.rect_dst.y += batata.speed;
+            batata.current_state = WALKING;
         }
 
-        if ( (keyState[SDL_SCANCODE_A] || keyState[SDL_SCANCODE_LEFT]) && batata_rect_dst.x > 0) {
-            batata_rect_dst.x -= speed;
-            current_batata_state = WALKING;
+        if ( (keyState[SDL_SCANCODE_A] || keyState[SDL_SCANCODE_LEFT]) && batata.rect_dst.x > 0) {
+            batata.rect_dst.x -= batata.speed;
+            batata.current_state = WALKING;
         }
 
-        if ( (keyState[SDL_SCANCODE_D] || keyState[SDL_SCANCODE_RIGHT]) && batata_rect_dst.x < bg_width - CHARACTER_WIDTH_RENDER) {
-            batata_rect_dst.x += speed;
-            current_batata_state = WALKING;
+        if ( (keyState[SDL_SCANCODE_D] || keyState[SDL_SCANCODE_RIGHT]) && batata.rect_dst.x < bg_width - CHARACTER_WIDTH_RENDER) {
+            batata.rect_dst.x += batata.speed;
+            batata.current_state = WALKING;
         }
 
-        UpdateAnimation(current_batata_state, batata_rect_src, frame, last_frame_time, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG, WALK_FRAME_COUNT, IDLE_FRAME_COUNT);
-        UpdateAnimation(WALKING, enemy_rect_src, frame_enemy, last_frame_time_enemy, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG, 8, 8);
-        UpdateCamera(batata_rect_dst.x, batata_rect_dst.y, &camera, batata_rect_dst, bg_width, bg_height, screen_width, screen_height);
+        UpdateAnimation(batata.current_state, batata.rect_src, frame, last_frame_time, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG, WALK_FRAME_COUNT, IDLE_FRAME_COUNT);
+        UpdateAnimation(WALKING, mage.rect_src, frame_enemy, last_frame_time_enemy, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG, 8, 8);
+        UpdateCamera(batata.rect_dst.x, batata.rect_dst.y, &camera, batata.rect_dst, bg_width, bg_height, screen_width, screen_height);
 
         SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
         SDL_RenderClear(g_renderer);
@@ -371,38 +404,38 @@ int main(int argc, char* argv[])
 
 
         SDL_Rect player_render_rect = {
-             batata_rect_dst.x - camera.x,
-             batata_rect_dst.y - camera.y,
-             batata_rect_dst.w, batata_rect_dst.h
+             batata.rect_dst.x - camera.x,
+             batata.rect_dst.y - camera.y,
+             batata.rect_dst.w, batata.rect_dst.h
         };
-        SDL_RenderCopy(g_renderer, batata_texture, &batata_rect_src, &player_render_rect);
+        SDL_RenderCopy(g_renderer, batata.texture, &batata.rect_src, &player_render_rect);
 
-        if (enemy_active) {
-            UpdateEnemyPosition(&enemy_rect_dst, batata_rect_dst, enemy_speed);
+        if (mage.is_active) {
+            UpdateEnemyPosition(&mage.rect_dst, batata.rect_dst, mage.speed);
             SDL_Rect enemy_render_rect = {
-                enemy_rect_dst.x - camera.x,
-                enemy_rect_dst.y - camera.y,
-                enemy_rect_dst.w + 10,
-                enemy_rect_dst.h + 10
+                mage.rect_dst.x - camera.x,
+                mage.rect_dst.y - camera.y,
+                mage.rect_dst.w + 10,
+                mage.rect_dst.h + 10
             };
 
-            SDL_RenderCopy(g_renderer, enemy_texture, &enemy_rect_src, &enemy_render_rect);
+            SDL_RenderCopy(g_renderer, mage.texture, &mage.rect_src, &enemy_render_rect);
 
             if (CheckCollision(player_render_rect, enemy_render_rect)) {
                 Uint32 current_time = SDL_GetTicks();
                 if (current_time > last_damage_time + damage_cooldown) {
-                    life -= 1;
-                    UpdateLife(life, life_text_texture, font, dest_tect_life_text);
+                    batata.life -= 1;
+                    UpdateLife(batata.life, life_text_texture, font, dest_tect_life_text);
                     last_damage_time = current_time;
                 }
             }
         }
 
-        if (enemy_active) {
-            FireProjectile(batata_rect_dst, enemy_rect_dst);
+        if (mage.is_active) {
+            FireProjectile(batata.rect_dst, mage.rect_dst);
         }
         UpdateProjectiles(bg_width, bg_height);
-        CheckProjectileCollisionWithEnemy(enemy_rect_dst, enemy_life, enemy_active);
+        CheckProjectileCollisionWithEnemy(mage.rect_dst, mage.life, mage.is_active);
         RenderProjectiles(camera);
 
         // Apresenta o conteúdo renderizado
