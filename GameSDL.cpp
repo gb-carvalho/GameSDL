@@ -184,8 +184,6 @@ void UpdateLife(int& life, SDL_Texture*& life_text_texture, TTF_Font* font, SDL_
 }
 
 
-
-
 void FireProjectile(SDL_Rect player_rect, SDL_Rect enemy_rect)
 {
     Uint32 current_time = SDL_GetTicks();
@@ -193,13 +191,17 @@ void FireProjectile(SDL_Rect player_rect, SDL_Rect enemy_rect)
         for (int i = 0; i < MAX_PROJECTILES; i++) {
             if (!projectiles[i].active) {
                 projectiles[i].rect = { player_rect.x + player_rect.w / 2, player_rect.y + player_rect.h / 2, 10, 10};
+                float diff_x = static_cast<float>(enemy_rect.x - player_rect.x);
+                float diff_y = static_cast<float>(enemy_rect.y - player_rect.y);
+                float magnitude = sqrt(diff_x * diff_x + diff_y * diff_y);
+                projectiles[i].dir_x = diff_x / magnitude;
+                projectiles[i].dir_y = diff_y / magnitude;
                 projectiles[i].active = true;
+                last_projectile_time = current_time;
                 break;
             }
         }
-        last_projectile_time = current_time;
     }
-
 }
 
 void RenderProjectiles(SDL_Rect camera)
@@ -214,6 +216,32 @@ void RenderProjectiles(SDL_Rect camera)
                 projectiles[i].rect.h
             };
             SDL_RenderFillRect(g_renderer, &render_rect);
+        }
+    }
+}
+
+void UpdateProjectiles(int width_limit, int height_limit)
+{
+    for (int i = 0; i < MAX_PROJECTILES; i++) {
+        projectiles[i].rect.x += projectiles[i].dir_x * PROJECTILE_SPEED;
+        projectiles[i].rect.y += projectiles[i].dir_y * PROJECTILE_SPEED;
+        if (projectiles[i].rect.x < 0 || projectiles[i].rect.x > width_limit ||
+            projectiles[i].rect.y < 0 || projectiles[i].rect.y > height_limit) {
+            projectiles[i].active = false;
+        }
+    }
+}
+
+void CheckProjectileCollisionWithEnemy(SDL_Rect enemy_rect, int &enemy_life, int &active)
+{
+    for (int i = 0; i < MAX_PROJECTILES; i++) {
+        if (projectiles[i].active && CheckCollision(projectiles[i].rect, enemy_rect)) { 
+            projectiles[i].active = false;
+            enemy_life--;
+        }
+
+        if (enemy_life <= 0) {
+            active = 0;
         }
     }
 }
@@ -260,6 +288,8 @@ int main(int argc, char* argv[])
     SDL_Rect enemy_rect_src = { 0, 0, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG };
     SDL_Rect enemy_rect_dst = { bg_width / 2 - 300, bg_height / 2, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG };
     SDL_Texture* enemy_texture = CreateTextureImg("Assets/mage_spritesheet_85x94.png");
+    int enemy_life = 5;
+    int enemy_active = 1;
 
     //Frame info
     int frame = 0;
@@ -347,27 +377,32 @@ int main(int argc, char* argv[])
         };
         SDL_RenderCopy(g_renderer, batata_texture, &batata_rect_src, &player_render_rect);
 
+        if (enemy_active) {
+            UpdateEnemyPosition(&enemy_rect_dst, batata_rect_dst, enemy_speed);
+            SDL_Rect enemy_render_rect = {
+                enemy_rect_dst.x - camera.x,
+                enemy_rect_dst.y - camera.y,
+                enemy_rect_dst.w + 10,
+                enemy_rect_dst.h + 10
+            };
 
-        UpdateEnemyPosition(&enemy_rect_dst, batata_rect_dst, enemy_speed);
-        SDL_Rect enemy_render_rect = {
-            enemy_rect_dst.x - camera.x,
-            enemy_rect_dst.y - camera.y,
-            enemy_rect_dst.w + 10,
-            enemy_rect_dst.h + 10
-        };
+            SDL_RenderCopy(g_renderer, enemy_texture, &enemy_rect_src, &enemy_render_rect);
 
-        SDL_RenderCopy(g_renderer, enemy_texture, &enemy_rect_src, &enemy_render_rect);
-
-        if (CheckCollision(player_render_rect, enemy_render_rect)) {
-            Uint32 current_time = SDL_GetTicks();
-            if (current_time > last_damage_time + damage_cooldown) {
-                life -= 1;
-                UpdateLife(life, life_text_texture, font, dest_tect_life_text);
-                last_damage_time = current_time;
+            if (CheckCollision(player_render_rect, enemy_render_rect)) {
+                Uint32 current_time = SDL_GetTicks();
+                if (current_time > last_damage_time + damage_cooldown) {
+                    life -= 1;
+                    UpdateLife(life, life_text_texture, font, dest_tect_life_text);
+                    last_damage_time = current_time;
+                }
             }
         }
 
-        FireProjectile(batata_rect_dst, enemy_rect_dst);
+        if (enemy_active) {
+            FireProjectile(batata_rect_dst, enemy_rect_dst);
+        }
+        UpdateProjectiles(bg_width, bg_height);
+        CheckProjectileCollisionWithEnemy(enemy_rect_dst, enemy_life, enemy_active);
         RenderProjectiles(camera);
 
         // Apresenta o conteúdo renderizado
