@@ -23,6 +23,9 @@
 #define PROJECTILE_SPEED 10
 #define MAX_PROJECTILES  100
 
+#define ENEMY_DELAY 5000
+#define MAX_ENEMIES  10
+
 struct Projectile
 {
     SDL_Rect src_rect;
@@ -30,30 +33,28 @@ struct Projectile
     SDL_Texture* texture;
     float dir_x, dir_y;
     bool active;
+    int frame;
+    Uint32 last_frame_time;
 };
 
-Projectile projectiles[MAX_PROJECTILES];
-Uint32 last_projectile_time = 0;
-
 enum batataState { IDLE, WALKING };
-
-SDL_Window* g_window = nullptr;
-SDL_Renderer* g_renderer = nullptr;
 
 class Entity {
 public:
     int speed;
     int life;
+    int frame;
+    Uint32 last_frame_time;
     SDL_Rect rect_src;
     SDL_Rect rect_dst;
     SDL_Texture* texture;
 
-    Entity(int spd, int lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex)
-        : speed(spd), life(lfe), rect_src(src), rect_dst(dst), texture(tex) {}
+    Entity(int spd, int lfe, int frm, int lftime, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex)
+        : speed(spd), life(lfe), frame(frm), last_frame_time(lftime), rect_src(src), rect_dst(dst), texture(tex) {}
 
-    virtual ~Entity() {
-        SDL_DestroyTexture(texture);
-    }
+    //virtual ~Entity() {
+    //    SDL_DestroyTexture(texture);
+    //}
 
     //void render(SDL_Renderer* renderer) {
     //    SDL_RenderCopy(renderer, texture, &rect_src, &rect_dst);
@@ -64,8 +65,8 @@ class Character : public Entity {
 public:
     batataState current_state;
 
-    Character(int spd, int lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, batataState state)
-        : Entity(spd, lfe, src, dst, tex), current_state(state) {}
+    Character(int spd, int lfe, int frm, int lftime, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, batataState state)
+        : Entity(spd, lfe, frm, lftime, src, dst, tex), current_state(state) {}
 
     void updateState(batataState newState) {
         current_state = newState;
@@ -77,13 +78,26 @@ class Enemy : public Entity {
 public:
     bool is_active;
 
-    Enemy(int spd, int lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active)
-        : Entity(spd, lfe, src, dst, tex), is_active(active) {}
+    Enemy()
+        : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), is_active(false) {}
+
+    Enemy(int spd, int lfe, int frm, int lftime, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active)
+        : Entity(spd, lfe, frm, lftime, src, dst, tex), is_active(active) {}
 
     void deactivate() {
         is_active = false;
     }
 };
+
+SDL_Window* g_window = nullptr;
+SDL_Renderer* g_renderer = nullptr;
+
+Projectile projectiles[MAX_PROJECTILES];
+Uint32 last_projectile_time = 0;
+
+Enemy enemies[MAX_ENEMIES];
+Uint32 last_enemy_time = 0;
+
 
 bool Init() 
 {
@@ -143,6 +157,7 @@ SDL_Texture* CreateTextureImg(const char* image_path)
 
     return texture;
 }
+
 
 SDL_Surface* CreateTextSurface(TTF_Font* font, const char* text, int r, int g, int b) 
 {
@@ -233,13 +248,13 @@ void UpdateLife(int& life, SDL_Texture*& life_text_texture, TTF_Font* font, SDL_
     }
 }
 
-void FireProjectile(SDL_Rect player_rect, SDL_Rect enemy_rect)
+void FireProjectile(SDL_Rect player_rect, SDL_Rect enemy_rect, SDL_Texture* projectile_texture)
 {
     Uint32 current_time = SDL_GetTicks();
     if ( current_time > last_projectile_time + PROJECTILE_DELAY) {
         for (int i = 0; i < MAX_PROJECTILES; i++) {
             if (!projectiles[i].active) {
-                projectiles[i].texture = CreateTextureImg("Assets/mage-bullet-13x13.png");
+                projectiles[i].texture = projectile_texture;
                 //SDL_SetTextureColorMod(projectiles[i].texture, 255, 0, 0);
                 projectiles[i].src_rect = { 0, 0, PROJECTILE_WIDTH_ORIG, PROJECTILE_HEIGTH_ORIG };
                 projectiles[i].dst_rect = { player_rect.x + player_rect.w / 2, player_rect.y + player_rect.h / 2, 25, 25};
@@ -249,6 +264,7 @@ void FireProjectile(SDL_Rect player_rect, SDL_Rect enemy_rect)
                 projectiles[i].dir_x = diff_x / magnitude;
                 projectiles[i].dir_y = diff_y / magnitude;
                 projectiles[i].active = true;
+                projectiles[i].last_frame_time = 0;
                 last_projectile_time = current_time;
                 break;
             }
@@ -297,6 +313,23 @@ void CheckProjectileCollisionWithEnemy(SDL_Rect enemy_rect, int &enemy_life, boo
     }
 }
 
+void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture) {
+    Uint32 current_time = SDL_GetTicks();
+    if(current_time > last_enemy_time + ENEMY_DELAY) {
+        for (int i = 0; i < MAX_ENEMIES; i++) {
+            if (!enemies[i].is_active) {
+                enemies[i] = Enemy{ 5, 5, 0, 0,
+                    { 0, 0, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG },  //rect_src
+                    { bg_width / 2 - 300, bg_height / 2, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG }, //dest_dst
+                    enemy_texture, //texture
+                    true };
+                last_enemy_time = current_time;
+                break;
+            }
+        }
+    }
+}
+
 int main(int argc, char* argv[]) 
 {
 
@@ -327,26 +360,17 @@ int main(int argc, char* argv[])
     SDL_QueryTexture(bg_texture, NULL, NULL, &bg_width, &bg_height);
 
 
-    Character batata{7, 3, 
+    Character batata{7, 3, 0, 0,
         { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG }, //rect_src
         { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER }, //rect_dst
         CreateTextureImg("Assets/batata_spritesheet.png"), //texture
         IDLE };
 
-    Enemy mage{5, 5,
-        { 0, 0, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG },  //rect_src
-        { bg_width / 2 - 300, bg_height / 2, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG }, //rect_dst
-        CreateTextureImg("Assets/mage_spritesheet_85x94.png"), //texture
-        1 };
+    SDL_Texture* projectile_texture = CreateTextureImg("Assets/mage-bullet-13x13.png");
+    SDL_Texture* enemy_texture = CreateTextureImg("Assets/mage_spritesheet_85x94.png");
 
     //Frame info
     //TODO: Melhora isso
-    int frame = 0;
-    Uint32 last_frame_time = 0;
-    int frame_enemy = 0;
-    Uint32 last_frame_time_enemy = 0;
-    int frame_projectile = 0;
-    Uint32 last_frame_time_projectile = 0;
 
     //Font
     TTF_Font* font = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf",24);
@@ -360,13 +384,14 @@ int main(int argc, char* argv[])
 
     SDL_Rect dest_tect_life_text;
     std::string life_text_string = "Lifes: " + std::to_string(batata.life);
-    SDL_Texture* life_text_texture = UpdateTextTexture(font, dest_tect_life_text, life_text_string);
+    SDL_Texture* life_text_texture = UpdateTextTexture(font, dest_tect_life_text, life_text_string);  
 
     Uint32 last_damage_time = 0;
     const Uint32 damage_cooldown = 1000;
 
     SDL_Event event;
     bool running = true;
+
     while (running) {
 
         while (SDL_PollEvent(&event)) {
@@ -399,11 +424,14 @@ int main(int argc, char* argv[])
             batata.current_state = WALKING;
         }
 
-        UpdateAnimation(batata.current_state, batata.rect_src, frame, last_frame_time, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG, WALK_FRAME_COUNT, IDLE_FRAME_COUNT);
-        UpdateAnimation(WALKING, mage.rect_src, frame_enemy, last_frame_time_enemy, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG, 8, 8);
-        for(int i = 0; i < MAX_PROJECTILES; i++) {
-            UpdateAnimation(WALKING, projectiles[i].src_rect, frame_projectile, last_frame_time_projectile, PROJECTILE_WIDTH_ORIG, PROJECTILE_HEIGTH_ORIG, 5, 5);
+        UpdateAnimation(batata.current_state, batata.rect_src, batata.frame, batata.last_frame_time, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG, WALK_FRAME_COUNT, IDLE_FRAME_COUNT);
+        for (int i = 0; i < MAX_ENEMIES; i++) {
+            if(enemies[i].is_active) UpdateAnimation(WALKING, enemies[i].rect_src, enemies[i].frame, enemies[i].last_frame_time, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG, 8, 8);
         }
+        for(int i = 0; i < MAX_PROJECTILES; i++) {
+            if(projectiles[i].active) UpdateAnimation(WALKING, projectiles[i].src_rect, projectiles[i].frame, projectiles[i].last_frame_time, PROJECTILE_WIDTH_ORIG, PROJECTILE_HEIGTH_ORIG, 5, 5);
+        }
+
         UpdateCamera(batata.rect_dst.x, batata.rect_dst.y, &camera, batata.rect_dst, bg_width, bg_height, screen_width, screen_height);
 
         SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
@@ -413,7 +441,6 @@ int main(int argc, char* argv[])
         SDL_RenderCopy(g_renderer, bg_texture, &camera, nullptr);
         SDL_RenderCopy(g_renderer, life_text_texture, nullptr, &dest_tect_life_text);
 
-
         SDL_Rect player_render_rect = {
              batata.rect_dst.x - camera.x,
              batata.rect_dst.y - camera.y,
@@ -421,32 +448,35 @@ int main(int argc, char* argv[])
         };
         SDL_RenderCopy(g_renderer, batata.texture, &batata.rect_src, &player_render_rect);
 
-        if (mage.is_active) {
-            UpdateEnemyPosition(&mage.rect_dst, batata.rect_dst, mage.speed);
-            SDL_Rect enemy_render_rect = {
-                mage.rect_dst.x - camera.x,
-                mage.rect_dst.y - camera.y,
-                mage.rect_dst.w + 10,
-                mage.rect_dst.h + 10
-            };
+        SpawnEnemies(bg_width, bg_height, enemy_texture);
+        for (int i = 0; i < MAX_ENEMIES; i++) {
+            if (enemies[i].is_active) {
+                UpdateEnemyPosition(&enemies[i].rect_dst, batata.rect_dst, enemies[i].speed);
+                SDL_Rect enemy_render_rect = {
+                    enemies[i].rect_dst.x - camera.x,
+                    enemies[i].rect_dst.y - camera.y,
+                    enemies[i].rect_dst.w + 10,
+                    enemies[i].rect_dst.h + 10
+                };
 
-            SDL_RenderCopy(g_renderer, mage.texture, &mage.rect_src, &enemy_render_rect);
+                SDL_RenderCopy(g_renderer, enemies[i].texture, &enemies[i].rect_src, &enemy_render_rect);
 
-            if (CheckCollision(player_render_rect, enemy_render_rect)) {
-                Uint32 current_time = SDL_GetTicks();
-                if (current_time > last_damage_time + damage_cooldown) {
-                    batata.life -= 1;
-                    UpdateLife(batata.life, life_text_texture, font, dest_tect_life_text);
-                    last_damage_time = current_time;
+                if (CheckCollision(player_render_rect, enemy_render_rect)) {
+                    Uint32 current_time = SDL_GetTicks();
+                    if (current_time > last_damage_time + damage_cooldown) {
+                        batata.life -= 1;
+                        UpdateLife(batata.life, life_text_texture, font, dest_tect_life_text);
+                        last_damage_time = current_time;
+                    }
                 }
+
+                FireProjectile(batata.rect_dst, enemies[i].rect_dst, projectile_texture);               
+                CheckProjectileCollisionWithEnemy(enemies[i].rect_dst, enemies[i].life, enemies[i].is_active);
+
             }
         }
 
-        if (mage.is_active) {
-            FireProjectile(batata.rect_dst, mage.rect_dst);
-        }
         UpdateProjectiles(bg_width, bg_height);
-        CheckProjectileCollisionWithEnemy(mage.rect_dst, mage.life, mage.is_active);
         RenderProjectiles(camera);
 
         // Apresenta o conteúdo renderizado
