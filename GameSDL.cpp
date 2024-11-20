@@ -12,6 +12,9 @@
 #define ENEMY_MAGE_WIDTH_ORIG  85
 #define ENEMY_MAGE_HEIGHT_ORIG 94
 
+#define PROJECTILE_WIDTH_ORIG  13
+#define PROJECTILE_HEIGTH_ORIG 13
+
 #define ANIMATION_SPEED  160
 #define WALK_FRAME_COUNT 4
 #define IDLE_FRAME_COUNT 2
@@ -22,7 +25,9 @@
 
 struct Projectile
 {
-    SDL_Rect rect;
+    SDL_Rect src_rect;
+    SDL_Rect dst_rect;
+    SDL_Texture* texture;
     float dir_x, dir_y;
     bool active;
 };
@@ -50,9 +55,9 @@ public:
         SDL_DestroyTexture(texture);
     }
 
-    void render(SDL_Renderer* renderer) {
-        SDL_RenderCopy(renderer, texture, &rect_src, &rect_dst);
-    }
+    //void render(SDL_Renderer* renderer) {
+    //    SDL_RenderCopy(renderer, texture, &rect_src, &rect_dst);
+    //}
 };
 
 class Character : public Entity {
@@ -199,7 +204,7 @@ void UpdateAnimation(batataState current_state, SDL_Rect& src_rect, int &frame, 
 {
     Uint32 current_time = SDL_GetTicks();
     if (current_time > last_frame_time + ANIMATION_SPEED) {
-        if (current_state == WALKING) {
+        if (current_state == WALKING || current_state == -1) {
             frame = (frame + 1) % walk_frame_count;
             src_rect.y = 0;
         }
@@ -228,14 +233,16 @@ void UpdateLife(int& life, SDL_Texture*& life_text_texture, TTF_Font* font, SDL_
     }
 }
 
-
 void FireProjectile(SDL_Rect player_rect, SDL_Rect enemy_rect)
 {
     Uint32 current_time = SDL_GetTicks();
     if ( current_time > last_projectile_time + PROJECTILE_DELAY) {
         for (int i = 0; i < MAX_PROJECTILES; i++) {
             if (!projectiles[i].active) {
-                projectiles[i].rect = { player_rect.x + player_rect.w / 2, player_rect.y + player_rect.h / 2, 10, 10};
+                projectiles[i].texture = CreateTextureImg("Assets/mage-bullet-13x13.png");
+                //SDL_SetTextureColorMod(projectiles[i].texture, 255, 0, 0);
+                projectiles[i].src_rect = { 0, 0, PROJECTILE_WIDTH_ORIG, PROJECTILE_HEIGTH_ORIG };
+                projectiles[i].dst_rect = { player_rect.x + player_rect.w / 2, player_rect.y + player_rect.h / 2, 25, 25};
                 float diff_x = static_cast<float>(enemy_rect.x - player_rect.x);
                 float diff_y = static_cast<float>(enemy_rect.y - player_rect.y);
                 float magnitude = sqrt(diff_x * diff_x + diff_y * diff_y);
@@ -251,16 +258,15 @@ void FireProjectile(SDL_Rect player_rect, SDL_Rect enemy_rect)
 
 void RenderProjectiles(SDL_Rect camera)
 {
-    SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255); // Vermelho
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         if (projectiles[i].active) {
             SDL_Rect render_rect = {
-                projectiles[i].rect.x - camera.x, // Ajusta a posição X com base na câmera
-                projectiles[i].rect.y - camera.y, // Ajusta a posição Y com base na câmera
-                projectiles[i].rect.w,
-                projectiles[i].rect.h
+                projectiles[i].dst_rect.x - camera.x, // Ajusta a posição X com base na câmera
+                projectiles[i].dst_rect.y - camera.y, // Ajusta a posição Y com base na câmera
+                projectiles[i].dst_rect.w,
+                projectiles[i].dst_rect.h
             };
-            SDL_RenderFillRect(g_renderer, &render_rect);
+            SDL_RenderCopy(g_renderer, projectiles[i].texture, &projectiles[i].src_rect, &render_rect);
         }
     }
 }
@@ -268,10 +274,10 @@ void RenderProjectiles(SDL_Rect camera)
 void UpdateProjectiles(int width_limit, int height_limit)
 {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
-        projectiles[i].rect.x += projectiles[i].dir_x * PROJECTILE_SPEED;
-        projectiles[i].rect.y += projectiles[i].dir_y * PROJECTILE_SPEED;
-        if (projectiles[i].rect.x < 0 || projectiles[i].rect.x > width_limit ||
-            projectiles[i].rect.y < 0 || projectiles[i].rect.y > height_limit) {
+        projectiles[i].dst_rect.x += projectiles[i].dir_x * PROJECTILE_SPEED;
+        projectiles[i].dst_rect.y += projectiles[i].dir_y * PROJECTILE_SPEED;
+        if (projectiles[i].dst_rect.x < 0 || projectiles[i].dst_rect.x > width_limit ||
+            projectiles[i].dst_rect.y < 0 || projectiles[i].dst_rect.y > height_limit) {
             projectiles[i].active = false;
         }
     }
@@ -280,7 +286,7 @@ void UpdateProjectiles(int width_limit, int height_limit)
 void CheckProjectileCollisionWithEnemy(SDL_Rect enemy_rect, int &enemy_life, bool &active)
 {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
-        if (projectiles[i].active && CheckCollision(projectiles[i].rect, enemy_rect)) { 
+        if (projectiles[i].active && CheckCollision(projectiles[i].dst_rect, enemy_rect)) {
             projectiles[i].active = false;
             enemy_life--;
         }
@@ -325,20 +331,22 @@ int main(int argc, char* argv[])
         { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG }, //rect_src
         { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER }, //rect_dst
         CreateTextureImg("Assets/batata_spritesheet.png"), //texture
-        IDLE};
+        IDLE };
 
     Enemy mage{5, 5,
         { 0, 0, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG },  //rect_src
         { bg_width / 2 - 300, bg_height / 2, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG }, //rect_dst
         CreateTextureImg("Assets/mage_spritesheet_85x94.png"), //texture
-        1
-    };
+        1 };
 
     //Frame info
+    //TODO: Melhora isso
     int frame = 0;
     Uint32 last_frame_time = 0;
     int frame_enemy = 0;
     Uint32 last_frame_time_enemy = 0;
+    int frame_projectile = 0;
+    Uint32 last_frame_time_projectile = 0;
 
     //Font
     TTF_Font* font = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf",24);
@@ -393,6 +401,9 @@ int main(int argc, char* argv[])
 
         UpdateAnimation(batata.current_state, batata.rect_src, frame, last_frame_time, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG, WALK_FRAME_COUNT, IDLE_FRAME_COUNT);
         UpdateAnimation(WALKING, mage.rect_src, frame_enemy, last_frame_time_enemy, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG, 8, 8);
+        for(int i = 0; i < MAX_PROJECTILES; i++) {
+            UpdateAnimation(WALKING, projectiles[i].src_rect, frame_projectile, last_frame_time_projectile, PROJECTILE_WIDTH_ORIG, PROJECTILE_HEIGTH_ORIG, 5, 5);
+        }
         UpdateCamera(batata.rect_dst.x, batata.rect_dst.y, &camera, batata.rect_dst, bg_width, bg_height, screen_width, screen_height);
 
         SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
