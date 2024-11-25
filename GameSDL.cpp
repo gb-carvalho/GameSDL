@@ -23,8 +23,8 @@
 #define PROJECTILE_SPEED 10
 #define MAX_PROJECTILES  100
 
-#define ENEMY_DELAY 5000
-#define MAX_ENEMIES  10
+#define ENEMY_DELAY 500
+#define MAX_ENEMIES  20
 
 struct Projectile
 {
@@ -96,6 +96,7 @@ Projectile projectiles[MAX_PROJECTILES];
 Uint32 last_projectile_time = 0;
 
 Enemy enemies[MAX_ENEMIES];
+bool resolved_collision[MAX_ENEMIES][MAX_ENEMIES] = { false };
 Uint32 last_enemy_time = 0;
 
 
@@ -318,7 +319,7 @@ void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture) {
     if(current_time > last_enemy_time + ENEMY_DELAY) {
         for (int i = 0; i < MAX_ENEMIES; i++) {
             if (!enemies[i].is_active) {
-                enemies[i] = Enemy{ 5, 5, 0, 0,
+                enemies[i] = Enemy{ 7, 1, 0, 0,
                     { 0, 0, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG },  //rect_src
                     { bg_width / 2 - 300, bg_height / 2, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG }, //dest_dst
                     enemy_texture, //texture
@@ -329,6 +330,40 @@ void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture) {
         }
     }
 }
+
+void resolveCollision(SDL_Rect* a, SDL_Rect* b) {
+    float dx = (a->x + a->w / 2) - (b->x + b->w / 2);
+    float dy = (a->y + a->h / 2) - (b->y + b->h / 2);
+
+    float half_sum_x = (a->w / 2) + (b->w / 2);
+    float half_sum_y = (a->h / 2) + (b->h / 2);
+
+    float overlap_x = half_sum_x - fabs(dx);
+    float overlap_y = half_sum_y - fabs(dy);
+
+    if (overlap_x > 0 && overlap_y > 0) {
+    
+        if (overlap_x < overlap_y) {
+            // Resolve along the X-axis
+            if (dx > 0) {
+                b->x -= overlap_x/5;
+            }
+            else {
+                b->x += overlap_x/5;
+            }
+        }
+        else {
+            // Resolve along the Y-axis
+            if (dy > 0) {
+                b->y -= overlap_y/5;
+            }
+            else {
+                b->y += overlap_y/5;
+            }
+        }
+    }
+};
+
 
 int main(int argc, char* argv[]) 
 {
@@ -360,7 +395,7 @@ int main(int argc, char* argv[])
     SDL_QueryTexture(bg_texture, NULL, NULL, &bg_width, &bg_height);
 
 
-    Character batata{7, 3, 0, 0,
+    Character batata{7, 100, 0, 0,
         { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG }, //rect_src
         { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER }, //rect_dst
         CreateTextureImg("Assets/batata_spritesheet.png"), //texture
@@ -368,9 +403,6 @@ int main(int argc, char* argv[])
 
     SDL_Texture* projectile_texture = CreateTextureImg("Assets/mage-bullet-13x13.png");
     SDL_Texture* enemy_texture = CreateTextureImg("Assets/mage_spritesheet_85x94.png");
-
-    //Frame info
-    //TODO: Melhora isso
 
     //Font
     TTF_Font* font = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf",24);
@@ -448,7 +480,7 @@ int main(int argc, char* argv[])
         };
         SDL_RenderCopy(g_renderer, batata.texture, &batata.rect_src, &player_render_rect);
 
-        SpawnEnemies(bg_width, bg_height, enemy_texture);
+        SpawnEnemies(bg_width, bg_height, enemy_texture);    
         for (int i = 0; i < MAX_ENEMIES; i++) {
             if (enemies[i].is_active) {
                 UpdateEnemyPosition(&enemies[i].rect_dst, batata.rect_dst, enemies[i].speed);
@@ -458,7 +490,6 @@ int main(int argc, char* argv[])
                     enemies[i].rect_dst.w + 10,
                     enemies[i].rect_dst.h + 10
                 };
-
                 SDL_RenderCopy(g_renderer, enemies[i].texture, &enemies[i].rect_src, &enemy_render_rect);
 
                 if (CheckCollision(player_render_rect, enemy_render_rect)) {
@@ -470,12 +501,20 @@ int main(int argc, char* argv[])
                     }
                 }
 
+                for (int j = i + 1; j < MAX_ENEMIES; j++) {
+                    if (!enemies[j].is_active || resolved_collision[i][j]) continue;
+                    resolveCollision(&enemies[i].rect_dst, &enemies[j].rect_dst);
+                    resolved_collision[i][j] = true;
+                    resolved_collision[j][i] = true;
+                }
+
                 FireProjectile(batata.rect_dst, enemies[i].rect_dst, projectile_texture);               
                 CheckProjectileCollisionWithEnemy(enemies[i].rect_dst, enemies[i].life, enemies[i].is_active);
 
             }
         }
 
+        memset(resolved_collision, 0, sizeof(resolved_collision));
         UpdateProjectiles(bg_width, bg_height);
         RenderProjectiles(camera);
 
