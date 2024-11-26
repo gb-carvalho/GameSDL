@@ -38,6 +38,7 @@ struct Projectile
 };
 
 enum batataState { IDLE, WALKING };
+enum gameState { TITLE_SCREEN, PLAYING, GAME_OVER };
 
 class Entity {
 public:
@@ -68,6 +69,14 @@ public:
     Character(int spd, int lfe, int frm, int lftime, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, batataState state)
         : Entity(spd, lfe, frm, lftime, src, dst, tex), current_state(state) {}
 
+  
+    void reset(SDL_Rect rect_dst_new) {
+        life = 3;
+        frame = 0;
+        last_frame_time = 0;
+        rect_dst = rect_dst_new;
+    }
+
     void updateState(batataState newState) {
         current_state = newState;
     }
@@ -89,6 +98,42 @@ public:
     }
 };
 
+struct DynamicText {
+    SDL_Texture* texture;
+    SDL_Rect rect;
+    std::string current_text;
+
+    DynamicText() : texture(nullptr), rect{ 0,0,0,0 }, current_text("") {}
+
+    void Update(SDL_Renderer* renderer, TTF_Font* font, const std::string& new_text, SDL_Color color) {
+        if (new_text != current_text) {
+            current_text = new_text;
+
+            if (texture) {
+                SDL_DestroyTexture(texture); // Limpa a textura antiga
+            }
+
+            SDL_Surface* surface = TTF_RenderText_Solid(font, new_text.c_str(), color);
+            texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+            rect.w = surface->w;
+            rect.h = surface->h;
+
+            SDL_FreeSurface(surface);
+        }
+    }
+
+    void Render(SDL_Renderer* renderer, int x, int y) {
+        rect.x = x;
+        rect.y = y;
+        SDL_RenderCopy(renderer, texture, nullptr, &rect);
+    }
+
+    ~DynamicText() {
+        if (texture) SDL_DestroyTexture(texture);
+    }
+};
+
 SDL_Window* g_window = nullptr;
 SDL_Renderer* g_renderer = nullptr;
 
@@ -99,6 +144,7 @@ Enemy enemies[MAX_ENEMIES];
 bool resolved_collision[MAX_ENEMIES][MAX_ENEMIES] = { false };
 Uint32 last_enemy_time = 0;
 
+DynamicText life_text;
 
 bool Init() 
 {
@@ -233,21 +279,6 @@ void UpdateAnimation(batataState current_state, SDL_Rect& src_rect, int &frame, 
     }
 };
 
-void UpdateLife(int& life, SDL_Texture*& life_text_texture, TTF_Font* font, SDL_Rect& dest_text_life_text)
-{
-    // Atualiza o texto de vida
-    std::string life_text_string = "Lifes: " + std::to_string(life);
-    life_text_texture = UpdateTextTexture(font, dest_text_life_text, life_text_string);
-
-    // Verifica se a vida acabou
-    if (life == 0) {
-        SDL_DestroyRenderer(g_renderer);
-        SDL_DestroyWindow(g_window);
-        TTF_Quit();
-        SDL_Quit();
-        exit(0); // Encerra o programa
-    }
-}
 
 void FireProjectile(SDL_Rect player_rect, SDL_Rect enemy_rect, SDL_Texture* projectile_texture)
 {
@@ -321,7 +352,7 @@ void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture) {
             if (!enemies[i].is_active) {
                 enemies[i] = Enemy{ 7, 1, 0, 0,
                     { 0, 0, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG },  //rect_src
-                    { bg_width / 2 - 300, bg_height / 2, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG }, //dest_dst
+                    { rand() % bg_width, rand() % bg_height, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG }, //dest_dst
                     enemy_texture, //texture
                     true };
                 last_enemy_time = current_time;
@@ -395,7 +426,7 @@ int main(int argc, char* argv[])
     SDL_QueryTexture(bg_texture, NULL, NULL, &bg_width, &bg_height);
 
 
-    Character batata{7, 100, 0, 0,
+    Character batata{7, 3, 0, 0,
         { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG }, //rect_src
         { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER }, //rect_dst
         CreateTextureImg("Assets/batata_spritesheet.png"), //texture
@@ -414,9 +445,8 @@ int main(int argc, char* argv[])
         SDL_Quit();
     }
 
-    SDL_Rect dest_tect_life_text;
-    std::string life_text_string = "Lifes: " + std::to_string(batata.life);
-    SDL_Texture* life_text_texture = UpdateTextTexture(font, dest_tect_life_text, life_text_string);  
+    life_text.Update(g_renderer, font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 });
+
 
     Uint32 last_damage_time = 0;
     const Uint32 damage_cooldown = 1000;
@@ -424,99 +454,121 @@ int main(int argc, char* argv[])
     SDL_Event event;
     bool running = true;
 
+    int current_game_state = TITLE_SCREEN;
+
     while (running) {
 
+        const Uint8* keyState = SDL_GetKeyboardState(NULL);
         while (SDL_PollEvent(&event)) {
-
             // Verificar se o jogo foi fechado
             if (event.type == SDL_QUIT) {
                 running = false;
             }
         }
 
-        const Uint8* keyState = SDL_GetKeyboardState(NULL);
-        batata.current_state = IDLE;
-        if ( (keyState[SDL_SCANCODE_W] || keyState[SDL_SCANCODE_UP]) && batata.rect_dst.y > 0){
-            batata.rect_dst.y -= batata.speed;
-            batata.current_state = WALKING;
-        }
+        switch (current_game_state) {
+        case TITLE_SCREEN:
 
-        if ( (keyState[SDL_SCANCODE_S] || keyState[SDL_SCANCODE_DOWN]) && batata.rect_dst.y < bg_height - CHARACTER_HEIGHT_RENDER) {
-            batata.rect_dst.y += batata.speed;
-            batata.current_state = WALKING;
-        }
-
-        if ( (keyState[SDL_SCANCODE_A] || keyState[SDL_SCANCODE_LEFT]) && batata.rect_dst.x > 0) {
-            batata.rect_dst.x -= batata.speed;
-            batata.current_state = WALKING;
-        }
-
-        if ( (keyState[SDL_SCANCODE_D] || keyState[SDL_SCANCODE_RIGHT]) && batata.rect_dst.x < bg_width - CHARACTER_WIDTH_RENDER) {
-            batata.rect_dst.x += batata.speed;
-            batata.current_state = WALKING;
-        }
-
-        UpdateAnimation(batata.current_state, batata.rect_src, batata.frame, batata.last_frame_time, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG, WALK_FRAME_COUNT, IDLE_FRAME_COUNT);
-        for (int i = 0; i < MAX_ENEMIES; i++) {
-            if(enemies[i].is_active) UpdateAnimation(WALKING, enemies[i].rect_src, enemies[i].frame, enemies[i].last_frame_time, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG, 8, 8);
-        }
-        for(int i = 0; i < MAX_PROJECTILES; i++) {
-            if(projectiles[i].active) UpdateAnimation(WALKING, projectiles[i].src_rect, projectiles[i].frame, projectiles[i].last_frame_time, PROJECTILE_WIDTH_ORIG, PROJECTILE_HEIGTH_ORIG, 5, 5);
-        }
-
-        UpdateCamera(batata.rect_dst.x, batata.rect_dst.y, &camera, batata.rect_dst, bg_width, bg_height, screen_width, screen_height);
-
-        SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
-        SDL_RenderClear(g_renderer);
-
-        SDL_Rect bg_render_rect = { 0, 0, bg_width, bg_height };
-        SDL_RenderCopy(g_renderer, bg_texture, &camera, nullptr);
-        SDL_RenderCopy(g_renderer, life_text_texture, nullptr, &dest_tect_life_text);
-
-        SDL_Rect player_render_rect = {
-             batata.rect_dst.x - camera.x,
-             batata.rect_dst.y - camera.y,
-             batata.rect_dst.w, batata.rect_dst.h
-        };
-        SDL_RenderCopy(g_renderer, batata.texture, &batata.rect_src, &player_render_rect);
-
-        SpawnEnemies(bg_width, bg_height, enemy_texture);    
-        for (int i = 0; i < MAX_ENEMIES; i++) {
-            if (enemies[i].is_active) {
-                UpdateEnemyPosition(&enemies[i].rect_dst, batata.rect_dst, enemies[i].speed);
-                SDL_Rect enemy_render_rect = {
-                    enemies[i].rect_dst.x - camera.x,
-                    enemies[i].rect_dst.y - camera.y,
-                    enemies[i].rect_dst.w + 10,
-                    enemies[i].rect_dst.h + 10
-                };
-                SDL_RenderCopy(g_renderer, enemies[i].texture, &enemies[i].rect_src, &enemy_render_rect);
-
-                if (CheckCollision(player_render_rect, enemy_render_rect)) {
-                    Uint32 current_time = SDL_GetTicks();
-                    if (current_time > last_damage_time + damage_cooldown) {
-                        batata.life -= 1;
-                        UpdateLife(batata.life, life_text_texture, font, dest_tect_life_text);
-                        last_damage_time = current_time;
-                    }
+            if (keyState[SDL_SCANCODE_RETURN]) {
+                current_game_state = PLAYING;
+                for (int i = 0; i < MAX_ENEMIES; i++) {
+                    enemies[i].is_active = false;
                 }
-
-                for (int j = i + 1; j < MAX_ENEMIES; j++) {
-                    if (!enemies[j].is_active || resolved_collision[i][j]) continue;
-                    resolveCollision(&enemies[i].rect_dst, &enemies[j].rect_dst);
-                    resolved_collision[i][j] = true;
-                    resolved_collision[j][i] = true;
-                }
-
-                FireProjectile(batata.rect_dst, enemies[i].rect_dst, projectile_texture);               
-                CheckProjectileCollisionWithEnemy(enemies[i].rect_dst, enemies[i].life, enemies[i].is_active);
-
+                batata.reset({ bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER });
+                life_text.Update(g_renderer, font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 });
             }
-        }
 
-        memset(resolved_collision, 0, sizeof(resolved_collision));
-        UpdateProjectiles(bg_width, bg_height);
-        RenderProjectiles(camera);
+
+            break;
+        case PLAYING:
+           
+            batata.current_state = IDLE;
+            if ((keyState[SDL_SCANCODE_W] || keyState[SDL_SCANCODE_UP]) && batata.rect_dst.y > 0) {
+                batata.rect_dst.y -= batata.speed;
+                batata.current_state = WALKING;
+            }
+
+            if ((keyState[SDL_SCANCODE_S] || keyState[SDL_SCANCODE_DOWN]) && batata.rect_dst.y < bg_height - CHARACTER_HEIGHT_RENDER) {
+                batata.rect_dst.y += batata.speed;
+                batata.current_state = WALKING;
+            }
+
+            if ((keyState[SDL_SCANCODE_A] || keyState[SDL_SCANCODE_LEFT]) && batata.rect_dst.x > 0) {
+                batata.rect_dst.x -= batata.speed;
+                batata.current_state = WALKING;
+            }
+
+            if ((keyState[SDL_SCANCODE_D] || keyState[SDL_SCANCODE_RIGHT]) && batata.rect_dst.x < bg_width - CHARACTER_WIDTH_RENDER) {
+                batata.rect_dst.x += batata.speed;
+                batata.current_state = WALKING;
+            }
+
+            UpdateAnimation(batata.current_state, batata.rect_src, batata.frame, batata.last_frame_time, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG, WALK_FRAME_COUNT, IDLE_FRAME_COUNT);
+            for (int i = 0; i < MAX_ENEMIES; i++) {
+                if (enemies[i].is_active) UpdateAnimation(WALKING, enemies[i].rect_src, enemies[i].frame, enemies[i].last_frame_time, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG, 8, 8);
+            }
+            for (int i = 0; i < MAX_PROJECTILES; i++) {
+                if (projectiles[i].active) UpdateAnimation(WALKING, projectiles[i].src_rect, projectiles[i].frame, projectiles[i].last_frame_time, PROJECTILE_WIDTH_ORIG, PROJECTILE_HEIGTH_ORIG, 5, 5);
+            }
+
+            UpdateCamera(batata.rect_dst.x, batata.rect_dst.y, &camera, batata.rect_dst, bg_width, bg_height, screen_width, screen_height);
+
+            SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
+            SDL_RenderClear(g_renderer);
+
+            SDL_Rect bg_render_rect = { 0, 0, bg_width, bg_height };
+            SDL_RenderCopy(g_renderer, bg_texture, &camera, nullptr);
+            life_text.Render(g_renderer, 50, 50);
+
+            SDL_Rect player_render_rect = {
+                 batata.rect_dst.x - camera.x,
+                 batata.rect_dst.y - camera.y,
+                 batata.rect_dst.w, batata.rect_dst.h
+            };
+            SDL_RenderCopy(g_renderer, batata.texture, &batata.rect_src, &player_render_rect);
+
+            SpawnEnemies(bg_width, bg_height, enemy_texture);
+            for (int i = 0; i < MAX_ENEMIES; i++) {
+                if (enemies[i].is_active) {
+                    UpdateEnemyPosition(&enemies[i].rect_dst, batata.rect_dst, enemies[i].speed);
+                    SDL_Rect enemy_render_rect = {
+                        enemies[i].rect_dst.x - camera.x,
+                        enemies[i].rect_dst.y - camera.y,
+                        enemies[i].rect_dst.w + 10,
+                        enemies[i].rect_dst.h + 10
+                    };
+                    SDL_RenderCopy(g_renderer, enemies[i].texture, &enemies[i].rect_src, &enemy_render_rect);
+
+                    if (CheckCollision(player_render_rect, enemy_render_rect)) {
+                        Uint32 current_time = SDL_GetTicks();
+                        if (current_time > last_damage_time + damage_cooldown) {
+                            batata.life -= 1;
+                            life_text.Update(g_renderer, font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 });
+                            last_damage_time = current_time;
+
+                            if (batata.life <= 0) {                              
+                                current_game_state = TITLE_SCREEN;
+                            }
+                        }
+                    }
+
+                    for (int j = i + 1; j < MAX_ENEMIES; j++) {
+                        if (!enemies[j].is_active || resolved_collision[i][j]) continue;
+                        resolveCollision(&enemies[i].rect_dst, &enemies[j].rect_dst);
+                        resolved_collision[i][j] = true;
+                        resolved_collision[j][i] = true;
+                    }
+
+                    FireProjectile(batata.rect_dst, enemies[i].rect_dst, projectile_texture);
+                    CheckProjectileCollisionWithEnemy(enemies[i].rect_dst, enemies[i].life, enemies[i].is_active);
+
+                }
+            }
+
+            memset(resolved_collision, 0, sizeof(resolved_collision));
+            UpdateProjectiles(bg_width, bg_height);
+            RenderProjectiles(camera);
+        }
 
         // Apresenta o conteúdo renderizado
         SDL_RenderPresent(g_renderer);
