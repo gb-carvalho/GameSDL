@@ -145,6 +145,7 @@ bool resolved_collision[MAX_ENEMIES][MAX_ENEMIES] = { false };
 Uint32 last_enemy_time = 0;
 
 DynamicText life_text;
+DynamicText title_text;
 
 bool Init() 
 {
@@ -436,7 +437,7 @@ int main(int argc, char* argv[])
     SDL_Texture* enemy_texture = CreateTextureImg("Assets/mage_spritesheet_85x94.png");
 
     //Font
-    TTF_Font* font = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf",24);
+    TTF_Font* font = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf",48);
     if (!font) {
         SDL_Log("Error loading font: %s", TTF_GetError());
         SDL_DestroyRenderer(g_renderer);
@@ -444,8 +445,16 @@ int main(int argc, char* argv[])
         TTF_Quit();
         SDL_Quit();
     }
+    TTF_Font* small_font = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf", 24);
+    if (!small_font) {
+        SDL_Log("Error loading font: %s", TTF_GetError());
+        SDL_DestroyRenderer(g_renderer);
+        SDL_DestroyWindow(g_window);
+        TTF_Quit();
+        SDL_Quit();
+    }
 
-    life_text.Update(g_renderer, font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 });
+    life_text.Update(g_renderer, small_font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 });
 
 
     Uint32 last_damage_time = 0;
@@ -469,19 +478,28 @@ int main(int argc, char* argv[])
         switch (current_game_state) {
         case TITLE_SCREEN:
 
+            title_text.Update(g_renderer, font, "Batata Game", { 100, 100, 255 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - title_text.rect.h / 2);
+            title_text.Update(g_renderer, small_font, "Press Enter to start", { 255, 255, 255 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - title_text.rect.h / 2 + 80);
+
             if (keyState[SDL_SCANCODE_RETURN]) {
                 current_game_state = PLAYING;
                 for (int i = 0; i < MAX_ENEMIES; i++) {
                     enemies[i].is_active = false;
                 }
+
+                for (int i = 0; i < MAX_PROJECTILES; i++) {
+                    projectiles[i].active = false;
+                }
+
                 batata.reset({ bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER });
-                life_text.Update(g_renderer, font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 });
+                life_text.Update(g_renderer, small_font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 });
             }
 
-
             break;
-        case PLAYING:
-           
+        case PLAYING: {
+
             batata.current_state = IDLE;
             if ((keyState[SDL_SCANCODE_W] || keyState[SDL_SCANCODE_UP]) && batata.rect_dst.y > 0) {
                 batata.rect_dst.y -= batata.speed;
@@ -543,11 +561,11 @@ int main(int argc, char* argv[])
                         Uint32 current_time = SDL_GetTicks();
                         if (current_time > last_damage_time + damage_cooldown) {
                             batata.life -= 1;
-                            life_text.Update(g_renderer, font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 });
+                            life_text.Update(g_renderer, small_font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 });
                             last_damage_time = current_time;
 
-                            if (batata.life <= 0) {                              
-                                current_game_state = TITLE_SCREEN;
+                            if (batata.life <= 0) {
+                                current_game_state = GAME_OVER;
                             }
                         }
                     }
@@ -568,6 +586,30 @@ int main(int argc, char* argv[])
             memset(resolved_collision, 0, sizeof(resolved_collision));
             UpdateProjectiles(bg_width, bg_height);
             RenderProjectiles(camera);
+            break;
+        }
+        case GAME_OVER:
+
+            title_text.Update(g_renderer, font, "You died", { 216, 216, 255 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2);
+            title_text.Update(g_renderer, small_font, "Press Enter to restart", { 255, 255, 255 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2 + 50);
+
+            if (keyState[SDL_SCANCODE_RETURN]) {
+                current_game_state = PLAYING;
+                for (int i = 0; i < MAX_ENEMIES; i++) {
+                    enemies[i].is_active = false;
+                }
+
+                for (int i = 0; i < MAX_PROJECTILES; i++) {
+                    projectiles[i].active = false;
+                }
+
+                batata.reset({ bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER });
+                life_text.Update(g_renderer, small_font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 });
+            }
+
+            break;
         }
 
         // Apresenta o conteúdo renderizado
@@ -576,6 +618,8 @@ int main(int argc, char* argv[])
     }
 
     // Limpeza
+    TTF_CloseFont(font);
+    TTF_CloseFont(small_font);
     SDL_DestroyRenderer(g_renderer);
     SDL_DestroyWindow(g_window);
     TTF_Quit();
