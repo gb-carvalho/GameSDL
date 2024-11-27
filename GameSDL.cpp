@@ -335,22 +335,71 @@ void UpdateAnimation(batataState current_state, SDL_Rect& src_rect, int &frame, 
     }
 };
 
-
-void FireProjectile(SDL_Rect player_rect, SDL_Rect enemy_rect, SDL_Texture* projectile_texture)
+float CalculateMagnitude(SDL_Rect a, SDL_Rect b) 
 {
+    float a_center_x = a.x + a.w / 2;
+    float a_center_y = a.y + a.h / 2;
+    float b_center_x = b.x + b.w / 2;
+    float b_center_y = b.y + b.h / 2;
+
+    float diff_x = static_cast<float>(a_center_x - b_center_x);
+    float diff_y = static_cast<float>(a_center_y - b_center_y);
+
+    float magnitude = sqrt(diff_x * diff_x + diff_y * diff_y);
+
+    return magnitude;
+}
+
+void CalculateDirection(SDL_Rect a, SDL_Rect b, Projectile* projectile)
+{
+    float a_center_x = a.x + a.w / 2;
+    float a_center_y = a.y + a.h / 2;
+    float b_center_x = b.x + b.w / 2;
+    float b_center_y = b.y + b.h / 2;
+
+    float diff_x = b_center_x - a_center_x;
+    float diff_y = b_center_y - a_center_y;
+
+    float magnitude = sqrt(diff_x * diff_x + diff_y * diff_y);
+
+    if (magnitude > 0) {
+        projectile->dir_x = diff_x / magnitude;
+        projectile->dir_y = diff_y / magnitude;
+    }
+    else {
+        projectile->dir_x = 1;
+        projectile->dir_y = 1;
+    }
+}
+
+
+void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture)
+{
+    float magnitude;
+
     Uint32 current_time = SDL_GetTicks();
     if ( current_time > last_projectile_time + PROJECTILE_DELAY) {
         for (int i = 0; i < MAX_PROJECTILES; i++) {
             if (!projectiles[i].is_active) {
+
+                float closest_distance = std::numeric_limits<float>::max();
+                Enemy* closest_enemy = nullptr;
+
+                for (int j = 0; j < MAX_ENEMIES; j++) {
+                    if (enemies[j].is_active) {
+                        magnitude = CalculateMagnitude(player_rect, enemies[j].rect_dst);
+                        if (magnitude < closest_distance) {
+                            closest_distance = magnitude;
+                            closest_enemy = &enemies[j];
+                        }
+                    }
+                }
+                    
                 projectiles[i].texture = projectile_texture;
                 projectiles[i].rect_src = { 0, 0, PROJECTILE_WIDTH_ORIG, PROJECTILE_HEIGTH_ORIG };
                 projectiles[i].rect_dst = { player_rect.x + player_rect.w / 2, player_rect.y + player_rect.h / 2, 25, 25};
-                float diff_x = static_cast<float>(enemy_rect.x - player_rect.x);
-                float diff_y = static_cast<float>(enemy_rect.y - player_rect.y);
-                float magnitude = sqrt(diff_x * diff_x + diff_y * diff_y);
-                projectiles[i].dir_x = diff_x / magnitude;
-                projectiles[i].dir_y = diff_y / magnitude;
-                projectiles[i].is_active = true;
+                if(closest_enemy) CalculateDirection(player_rect, closest_enemy->rect_dst, &projectiles[i]);
+                if(closest_enemy) projectiles[i].is_active = true;
                 projectiles[i].last_frame_time = 0;
                 last_projectile_time = current_time;
                 break;
@@ -585,7 +634,7 @@ int main(int argc, char* argv[])
                 if (enemies[i].is_active) UpdateAnimation(WALKING, enemies[i].rect_src, enemies[i].frame, enemies[i].last_frame_time, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG, 8, 8);
             }
             for (int i = 0; i < MAX_PROJECTILES; i++) {
-                //if (projectiles[i].is_active) UpdateAnimation(WALKING, projectiles[i].rect_src, projectiles[i].frame, projectiles[i].last_frame_time, PROJECTILE_WIDTH_ORIG, PROJECTILE_HEIGTH_ORIG, 5, 5);
+                if (projectiles[i].is_active) UpdateAnimation(WALKING, projectiles[i].rect_src, projectiles[i].frame, projectiles[i].last_frame_time, PROJECTILE_WIDTH_ORIG, PROJECTILE_HEIGTH_ORIG, 5, 5);
             }
 
             UpdateCamera(batata.rect_dst.x, batata.rect_dst.y, &camera, batata.rect_dst, bg_width, bg_height, screen_width, screen_height);
@@ -595,8 +644,6 @@ int main(int argc, char* argv[])
 
             SDL_Rect bg_render_rect = { 0, 0, bg_width, bg_height };
             SDL_RenderCopy(g_renderer, bg_texture, &camera, nullptr);
-            life_text.Render(g_renderer, 50, 50);
-            kill_count_text.Render(g_renderer, screen_width / 2 - kill_count_text.rect.w/2, 50);
 
             SDL_Rect player_render_rect = {
                  batata.rect_dst.x - camera.x,
@@ -631,6 +678,7 @@ int main(int argc, char* argv[])
                         }
                     }
 
+                    CheckProjectileCollisionWithEnemy(enemies[i].hitbox, enemies[i].life, enemies[i].is_active, camera, kill_count, small_font);
                     for (int j = i + 1; j < MAX_ENEMIES; j++) {
                         if (!enemies[j].is_active || resolved_collision[i][j]) continue;
                         resolveCollision(&enemies[i].rect_dst, &enemies[j].rect_dst);
@@ -638,12 +686,13 @@ int main(int argc, char* argv[])
                         resolved_collision[j][i] = true;
                     }
 
-                    FireProjectile(batata.rect_dst, enemies[i].rect_dst, projectile_texture);
-                    CheckProjectileCollisionWithEnemy(enemies[i].hitbox, enemies[i].life, enemies[i].is_active, camera, kill_count, small_font);
-
                 }
             }
 
+            FireProjectile(batata.rect_dst, projectile_texture);
+
+            life_text.Render(g_renderer, 50, 20);
+            kill_count_text.Render(g_renderer, screen_width / 2 - kill_count_text.rect.w / 2, 20);
             memset(resolved_collision, 0, sizeof(resolved_collision));
             UpdateProjectiles(bg_width, bg_height);
             RenderProjectiles(camera);
