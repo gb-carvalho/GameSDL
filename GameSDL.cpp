@@ -188,6 +188,8 @@ Uint32 last_enemy_time = 0;
 DynamicText life_text;
 DynamicText title_text;
 DynamicText kill_count_text;
+DynamicText stopwatch_text;
+
 
 bool Init() 
 {
@@ -501,6 +503,19 @@ void resolveCollision(SDL_Rect* a, SDL_Rect* b) {
     }
 };
 
+void UpdateRenderStopwatch(int start_time, TTF_Font* font, int screen_width) {
+    int elapsed_time = (SDL_GetTicks() - start_time) / 1000;
+
+    int minutes = elapsed_time / 60;
+    int seconds = elapsed_time % 60;
+
+    std::string time_formatted =
+        (minutes < 10 ? "0" : "") + std::to_string(minutes) + ":" +
+        (seconds < 10 ? "0" : "") + std::to_string(seconds);
+
+    stopwatch_text.Update(g_renderer, font, time_formatted, { 255, 255, 255 });
+    stopwatch_text.Render(g_renderer, screen_width - 30 - (stopwatch_text.rect.w), 20);
+}
 
 int main(int argc, char* argv[]) 
 {
@@ -565,6 +580,8 @@ int main(int argc, char* argv[])
     bool running = true;
     int current_game_state = TITLE_SCREEN;
     int kill_count;
+    int start_time;
+    int elapsed_time;
 
     while (running) {
 
@@ -597,13 +614,15 @@ int main(int argc, char* argv[])
                 kill_count = 0;
                 batata.reset({ bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER });
                 batata.UpdateHitbox();
+                start_time = SDL_GetTicks();
+                UpdateRenderStopwatch(start_time, small_font, screen_width);
                 life_text.Update(g_renderer, small_font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 });
                 kill_count_text.Update(g_renderer, small_font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 });
             }
 
             break;
-        case PLAYING: {
-
+        case PLAYING: {         
+            
             batata.current_state = IDLE;
             if ((keyState[SDL_SCANCODE_W] || keyState[SDL_SCANCODE_UP]) && batata.rect_dst.y > 0) {
                 batata.rect_dst.y -= batata.speed;
@@ -689,11 +708,13 @@ int main(int argc, char* argv[])
                 }
             }
 
-            FireProjectile(batata.rect_dst, projectile_texture);
-
+            UpdateRenderStopwatch(start_time, small_font, screen_width);          
             life_text.Render(g_renderer, 50, 20);
             kill_count_text.Render(g_renderer, screen_width / 2 - kill_count_text.rect.w / 2, 20);
+
             memset(resolved_collision, 0, sizeof(resolved_collision));
+
+            FireProjectile(batata.rect_dst, projectile_texture);
             UpdateProjectiles(bg_width, bg_height);
             RenderProjectiles(camera);
             break;
@@ -718,7 +739,9 @@ int main(int argc, char* argv[])
                 kill_count = 0;
                 batata.reset({ bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER });
                 batata.UpdateHitbox();
-                life_text.Update(g_renderer, small_font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 });
+                start_time = SDL_GetTicks();
+                elapsed_time = (SDL_GetTicks() - start_time) / 1000;
+                stopwatch_text.Update(g_renderer, small_font, std::to_string(elapsed_time), { 255, 255, 255 });
                 kill_count_text.Update(g_renderer, small_font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 });
             }
             break;
