@@ -3,6 +3,7 @@
 #include <SDL_image.h>
 #include <SDL_ttf.h>
 #include <iostream>
+#include <fstream>
 
 #define CHARACTER_WIDTH_ORIG    32 //Size of character width in sprite
 #define CHARACTER_HEIGHT_ORIG   32 //Size of character height in sprite
@@ -25,6 +26,8 @@
 
 #define ENEMY_DELAY 500
 #define MAX_ENEMIES  20
+
+#define SAVE_FILE "sdl.dat"
 
 enum batataState { IDLE, WALKING };
 enum gameState { TITLE_SCREEN, PLAYING, GAME_OVER };
@@ -517,6 +520,54 @@ void UpdateRenderStopwatch(int start_time, TTF_Font* font, int screen_width) {
     stopwatch_text.Render(g_renderer, screen_width - 30 - (stopwatch_text.rect.w), 20);
 }
 
+void SaveGame(const std::string& file_name, int kill_count, int elapsed_time) {
+    std::ofstream save_file(file_name, std::ios::binary);
+    if (!save_file.is_open()) {
+        SDL_Log("Error opening save file\n");
+        return;
+    }
+
+    save_file.write(reinterpret_cast<const char*>(&kill_count), sizeof(kill_count));
+    save_file.write(reinterpret_cast<const char*>(&elapsed_time), sizeof(elapsed_time));
+
+    save_file.close();
+    SDL_Log("Saved\n");
+}
+
+void LoadGame(const std::string& file_name, int& kill_count, int& elapsed_time) {
+    std::ifstream save_file(file_name, std::ios::binary);
+    if (!save_file.is_open()) {
+        SDL_Log("Error opening save file\n");
+        return;
+    }
+
+    save_file.read(reinterpret_cast<char*>(&kill_count), sizeof(kill_count));
+    save_file.read(reinterpret_cast<char*>(&elapsed_time), sizeof(elapsed_time));
+
+    save_file.close();   
+}
+
+void ResetGame(int &current_game_state, int &kill_count, Character* batata, int bg_width, int bg_height, int &start_time, int &elapsed_time, TTF_Font* font) {
+
+    current_game_state = PLAYING;
+    for (int i = 0; i < MAX_ENEMIES; i++) {
+        enemies[i].deactivate();
+    }
+
+    for (int i = 0; i < MAX_PROJECTILES; i++) {
+        projectiles[i].deactivate();
+    }
+
+    kill_count = 0;
+    batata->reset({ bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER });
+    batata->UpdateHitbox();
+    start_time = SDL_GetTicks();
+    elapsed_time = (SDL_GetTicks() - start_time) / 1000;
+    stopwatch_text.Update(g_renderer, font, std::to_string(elapsed_time), { 255, 255, 255 });
+    kill_count_text.Update(g_renderer, font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 });
+    life_text.Update(g_renderer, font, "Lifes: " + std::to_string(batata->life), { 255, 255, 255 });
+}
+
 int main(int argc, char* argv[]) 
 {
 
@@ -602,22 +653,7 @@ int main(int argc, char* argv[])
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - title_text.rect.h / 2 + 80);
 
             if (keyState[SDL_SCANCODE_RETURN]) {
-                current_game_state = PLAYING;
-                for (int i = 0; i < MAX_ENEMIES; i++) {
-                    enemies[i].deactivate();
-                }
-
-                for (int i = 0; i < MAX_PROJECTILES; i++) {
-                    projectiles[i].deactivate();
-                }
-
-                kill_count = 0;
-                batata.reset({ bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER });
-                batata.UpdateHitbox();
-                start_time = SDL_GetTicks();
-                UpdateRenderStopwatch(start_time, small_font, screen_width);
-                life_text.Update(g_renderer, small_font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 });
-                kill_count_text.Update(g_renderer, small_font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 });
+                ResetGame(current_game_state, kill_count, &batata, bg_width, bg_height, start_time, elapsed_time, small_font);
             }
 
             break;
@@ -725,24 +761,11 @@ int main(int argc, char* argv[])
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2);
             title_text.Update(g_renderer, small_font, "Press Enter to restart", { 255, 255, 255 });
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2 + 50);
+            SaveGame(SAVE_FILE,kill_count,elapsed_time);
 
             if (keyState[SDL_SCANCODE_RETURN]) {
-                current_game_state = PLAYING;
-                for (int i = 0; i < MAX_ENEMIES; i++) {
-                    enemies[i].deactivate();
-                }
+                ResetGame(current_game_state, kill_count, &batata, bg_width, bg_height, start_time, elapsed_time, small_font);
 
-                for (int i = 0; i < MAX_PROJECTILES; i++) {
-                    projectiles[i].deactivate();
-                }
-
-                kill_count = 0;
-                batata.reset({ bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER });
-                batata.UpdateHitbox();
-                start_time = SDL_GetTicks();
-                elapsed_time = (SDL_GetTicks() - start_time) / 1000;
-                stopwatch_text.Update(g_renderer, small_font, std::to_string(elapsed_time), { 255, 255, 255 });
-                kill_count_text.Update(g_renderer, small_font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 });
             }
             break;
         }
