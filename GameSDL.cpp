@@ -144,30 +144,45 @@ public:
 
 struct DynamicText {
     SDL_Texture* texture;
+    SDL_Texture* shadow_texture;
     SDL_Rect rect;
     std::string current_text;
 
-    DynamicText() : texture(nullptr), rect{ 0,0,0,0 }, current_text("") {}
+    DynamicText() : texture(nullptr), shadow_texture(nullptr), rect{0,0,0,0}, current_text("") {}
 
-    void Update(SDL_Renderer* renderer, TTF_Font* font, const std::string& new_text, SDL_Color color) {
+    void Update(SDL_Renderer* renderer, TTF_Font* font, const std::string& new_text, SDL_Color color, SDL_Color shadow_color) {
         if (new_text != current_text) {
             current_text = new_text;
 
             if (texture) {
                 SDL_DestroyTexture(texture); // Limpa a textura antiga
             }
+            if (shadow_texture) {
+                SDL_DestroyTexture(shadow_texture);
+            }
 
             SDL_Surface* surface = TTF_RenderText_Solid(font, new_text.c_str(), color);
             texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+            SDL_Surface* shadow_surface = TTF_RenderText_Solid(font, new_text.c_str(), shadow_color);
+            shadow_texture = SDL_CreateTextureFromSurface(renderer, shadow_surface);
 
             rect.w = surface->w;
             rect.h = surface->h;
 
             SDL_FreeSurface(surface);
+            SDL_FreeSurface(shadow_surface);
+
         }
     }
 
-    void Render(SDL_Renderer* renderer, int x, int y) {
+    void Render(SDL_Renderer* renderer, int x, int y, bool shadow) {
+
+        if (shadow && shadow_texture) {
+            SDL_Rect shadow_rect = { x + 2, y + 2, rect.w, rect.h };
+            SDL_RenderCopy(renderer, shadow_texture, nullptr, &shadow_rect);
+        }
+        
         rect.x = x;
         rect.y = y;
         SDL_RenderCopy(renderer, texture, nullptr, &rect);
@@ -449,14 +464,15 @@ void CheckProjectileCollisionWithEnemy(SDL_Rect enemy_rect, int &enemy_life, boo
             enemy_life--;
             if (enemy_life <= 0) {
                 kill_count++;
-                kill_count_text.Update(g_renderer, font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 });
+                kill_count_text.Update(g_renderer, font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 }, { 0, 0, 0 });
                 active = 0;
             }
         }
     }
 }
 
-void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture) {
+void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture) 
+{
     Uint32 current_time = SDL_GetTicks();
     if(current_time > last_enemy_time + ENEMY_DELAY) {
         for (int i = 0; i < MAX_ENEMIES; i++) {
@@ -473,7 +489,8 @@ void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture) {
     }
 }
 
-void resolveCollision(SDL_Rect* a, SDL_Rect* b) {
+void resolveCollision(SDL_Rect* a, SDL_Rect* b) 
+{
     float dx = (a->x + a->w / 2) - (b->x + b->w / 2);
     float dy = (a->y + a->h / 2) - (b->y + b->h / 2);
 
@@ -506,38 +523,34 @@ void resolveCollision(SDL_Rect* a, SDL_Rect* b) {
     }
 };
 
-void UpdateRenderStopwatch(int start_time, TTF_Font* font, int screen_width) {
-    int elapsed_time = (SDL_GetTicks() - start_time) / 1000;
-
-    int minutes = elapsed_time / 60;
-    int seconds = elapsed_time % 60;
+std::string TimeFormatted(int time_in_seconds){
+    int minutes = time_in_seconds / 60;
+    int seconds = time_in_seconds % 60;
 
     std::string time_formatted =
         (minutes < 10 ? "0" : "") + std::to_string(minutes) + ":" +
         (seconds < 10 ? "0" : "") + std::to_string(seconds);
 
-    stopwatch_text.Update(g_renderer, font, time_formatted, { 255, 255, 255 });
-    stopwatch_text.Render(g_renderer, screen_width - 30 - (stopwatch_text.rect.w), 20);
+    return time_formatted;
 }
 
-void SaveGame(const std::string& file_name, int kill_count, int elapsed_time) {
-    std::ofstream save_file(file_name, std::ios::binary);
-    if (!save_file.is_open()) {
-        SDL_Log("Error opening save file\n");
-        return;
-    }
+void UpdateRenderStopwatch(int start_time, TTF_Font* font, int screen_width, int &elapsed_time) 
+{
+    elapsed_time = (SDL_GetTicks() - start_time) / 1000;
 
-    save_file.write(reinterpret_cast<const char*>(&kill_count), sizeof(kill_count));
-    save_file.write(reinterpret_cast<const char*>(&elapsed_time), sizeof(elapsed_time));
+    std::string time_formatted = TimeFormatted(elapsed_time);
 
-    save_file.close();
-    SDL_Log("Saved\n");
+    stopwatch_text.Update(g_renderer, font, time_formatted, { 255, 255, 255 }, { 0, 0, 0 });
+    stopwatch_text.Render(g_renderer, screen_width - 30 - (stopwatch_text.rect.w), 20, true);
 }
 
-void LoadGame(const std::string& file_name, int& kill_count, int& elapsed_time) {
+void LoadGame(const std::string& file_name, int& kill_count, int& elapsed_time) 
+{
     std::ifstream save_file(file_name, std::ios::binary);
     if (!save_file.is_open()) {
         SDL_Log("Error opening save file\n");
+        kill_count = 0;
+        elapsed_time = 0;
         return;
     }
 
@@ -547,9 +560,29 @@ void LoadGame(const std::string& file_name, int& kill_count, int& elapsed_time) 
     save_file.close();   
 }
 
-void ResetGame(int &current_game_state, int &kill_count, Character* batata, int bg_width, int bg_height, int &start_time, int &elapsed_time, TTF_Font* font) {
+void SaveGame(const std::string& file_name, int kill_count, int elapsed_time)
+{
+    int kill_count_save_file, elapsed_time_save_file;
 
-    current_game_state = PLAYING;
+    LoadGame(file_name, kill_count_save_file, elapsed_time_save_file);
+  
+    std::ofstream save_file(file_name, std::ios::binary);
+    if (!save_file.is_open()) {
+        SDL_Log("Error opening save file\n");
+        return;
+    }
+    
+    if (kill_count > kill_count_save_file) save_file.write(reinterpret_cast<const char*>(&kill_count), sizeof(kill_count));   
+    else save_file.write(reinterpret_cast<const char*>(&kill_count_save_file), sizeof(kill_count_save_file));
+    
+    if (elapsed_time > elapsed_time_save_file) save_file.write(reinterpret_cast<const char*>(&elapsed_time), sizeof(elapsed_time));
+    else save_file.write(reinterpret_cast<const char*>(&elapsed_time_save_file), sizeof(elapsed_time_save_file));
+
+    save_file.close();
+}
+
+void ResetGame(int &kill_count, Character* batata, int bg_width, int bg_height, int &start_time, int &elapsed_time, TTF_Font* font) 
+{  
     for (int i = 0; i < MAX_ENEMIES; i++) {
         enemies[i].deactivate();
     }
@@ -563,9 +596,9 @@ void ResetGame(int &current_game_state, int &kill_count, Character* batata, int 
     batata->UpdateHitbox();
     start_time = SDL_GetTicks();
     elapsed_time = (SDL_GetTicks() - start_time) / 1000;
-    stopwatch_text.Update(g_renderer, font, std::to_string(elapsed_time), { 255, 255, 255 });
-    kill_count_text.Update(g_renderer, font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 });
-    life_text.Update(g_renderer, font, "Lifes: " + std::to_string(batata->life), { 255, 255, 255 });
+    stopwatch_text.Update(g_renderer, font, std::to_string(elapsed_time), { 255, 255, 255 }, { 0, 0, 0 });
+    kill_count_text.Update(g_renderer, font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 }, { 0, 0, 0 });
+    life_text.Update(g_renderer, font, "Lifes: " + std::to_string(batata->life), { 255, 255, 255 }, { 0, 0, 0 });
 }
 
 int main(int argc, char* argv[]) 
@@ -646,19 +679,29 @@ int main(int argc, char* argv[])
 
         switch (current_game_state) {
         case TITLE_SCREEN:
+            SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
+            SDL_RenderClear(g_renderer);
 
-            title_text.Update(g_renderer, font, "Batata Game", { 100, 100, 255 });
-            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - title_text.rect.h / 2);
-            title_text.Update(g_renderer, small_font, "Press Enter to start", { 255, 255, 255 });
-            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - title_text.rect.h / 2 + 80);
+            title_text.Update(g_renderer, font, "Batata Game", { 238, 173, 45 }, { 255, 255, 255 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 4 - title_text.rect.h / 2, false);
+            title_text.Update(g_renderer, small_font, "Press Enter to start", { 255, 255, 255 }, { 0, 0, 0 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - title_text.rect.h / 2, false);
+
+            LoadGame(SAVE_FILE, kill_count, elapsed_time);
+            title_text.Update(g_renderer, small_font, "Kill record: " + std::to_string(kill_count), { 255, 50, 50 }, { 0, 0, 0 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 + 80, true);
+            title_text.Update(g_renderer, small_font, "Time record: " + TimeFormatted(elapsed_time), { 255, 50, 50 }, { 0, 0, 0 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 + 120, true);
 
             if (keyState[SDL_SCANCODE_RETURN]) {
-                ResetGame(current_game_state, kill_count, &batata, bg_width, bg_height, start_time, elapsed_time, small_font);
+                ResetGame(kill_count, &batata, bg_width, bg_height, start_time, elapsed_time, small_font);
+                current_game_state = PLAYING;
             }
 
+
             break;
-        case PLAYING: {         
-            
+        case PLAYING: {
+
             batata.current_state = IDLE;
             if ((keyState[SDL_SCANCODE_W] || keyState[SDL_SCANCODE_UP]) && batata.rect_dst.y > 0) {
                 batata.rect_dst.y -= batata.speed;
@@ -724,7 +767,7 @@ int main(int argc, char* argv[])
                         Uint32 current_time = SDL_GetTicks();
                         if (current_time > last_damage_time + damage_cooldown) {
                             batata.life -= 1;
-                            life_text.Update(g_renderer, small_font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 });
+                            life_text.Update(g_renderer, small_font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 }, { 0, 0, 0 });
                             last_damage_time = current_time;
 
                             if (batata.life <= 0) {
@@ -740,13 +783,12 @@ int main(int argc, char* argv[])
                         resolved_collision[i][j] = true;
                         resolved_collision[j][i] = true;
                     }
-
                 }
             }
 
-            UpdateRenderStopwatch(start_time, small_font, screen_width);          
-            life_text.Render(g_renderer, 50, 20);
-            kill_count_text.Render(g_renderer, screen_width / 2 - kill_count_text.rect.w / 2, 20);
+            UpdateRenderStopwatch(start_time, small_font, screen_width, elapsed_time);
+            life_text.Render(g_renderer, 50, 20, true);
+            kill_count_text.Render(g_renderer, screen_width / 2 - kill_count_text.rect.w / 2, 20, true);
 
             memset(resolved_collision, 0, sizeof(resolved_collision));
 
@@ -757,15 +799,27 @@ int main(int argc, char* argv[])
         }
         case GAME_OVER:
 
-            title_text.Update(g_renderer, font, "You died", { 216, 216, 255 });
-            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2);
-            title_text.Update(g_renderer, small_font, "Press Enter to restart", { 255, 255, 255 });
-            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2 + 50);
+            int kill_count_save_file, elapsed_time_save_file;
+            LoadGame("sdl.dat", kill_count_save_file, elapsed_time_save_file);
+
+            title_text.Update(g_renderer, font, "You died", { 238, 173, 45 }, { 0, 0, 0 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2, true);
+            title_text.Update(g_renderer, small_font, "Press Enter to restart", { 255, 255, 255 }, { 0, 0, 0 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2 + 60, true);
+            title_text.Update(g_renderer, small_font, "Press ESC to go to the title screen.", { 255, 255, 255 }, { 0, 0, 0 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2 + 90, true);
+
+            if (kill_count > kill_count_save_file || elapsed_time > elapsed_time_save_file) {
+                title_text.Update(g_renderer, small_font, "Congratulations! You've set a new record!", { 255, 50, 50 }, { 0, 0, 0 });
+                title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2 + 120, true);
+            }
+
             SaveGame(SAVE_FILE,kill_count,elapsed_time);
 
-            if (keyState[SDL_SCANCODE_RETURN]) {
-                ResetGame(current_game_state, kill_count, &batata, bg_width, bg_height, start_time, elapsed_time, small_font);
-
+            if (keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_ESCAPE]) {
+                ResetGame(kill_count, &batata, bg_width, bg_height, start_time, elapsed_time, small_font);
+                if (keyState[SDL_SCANCODE_ESCAPE]) current_game_state = TITLE_SCREEN;
+                else if (keyState[SDL_SCANCODE_RETURN]) current_game_state = PLAYING;
             }
             break;
         }
