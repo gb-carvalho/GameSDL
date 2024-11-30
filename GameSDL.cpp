@@ -2,6 +2,7 @@
 #include <string>
 #include <SDL_image.h>
 #include <SDL_ttf.h>
+#include <SDL_mixer.h>
 #include <iostream>
 #include <fstream>
 
@@ -240,6 +241,31 @@ void InitRenderer()
         SDL_DestroyWindow(g_window);
         SDL_Quit();
     }
+}
+
+Mix_Music* InitMusic()
+{
+    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
+        SDL_Log("Erro ao inicializar o SDL: %s", SDL_GetError());
+        return nullptr;
+    }
+
+    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
+        SDL_Log("Erro ao inicializar SDL_mixer : %s", Mix_GetError());
+        return nullptr;
+    }
+
+    Mix_Music* music = Mix_LoadMUS("Assets/music.mp3");
+    if (!music) {
+        SDL_Log("Erro ao carregar música: %s", Mix_GetError());
+        Mix_CloseAudio();
+        SDL_Quit();
+        return nullptr;
+    }
+    Mix_VolumeMusic(MIX_MAX_VOLUME / 30);
+    Mix_PlayMusic(music, -1);
+
+    return music;
 }
 
 SDL_Texture* CreateTextureImg(const char* image_path) 
@@ -622,6 +648,7 @@ int main(int argc, char* argv[])
 
     InitWindow(screen_width, screen_height);
     InitRenderer();
+    Mix_Music* music = InitMusic();
 
     SDL_Rect camera = { 0, 0, screen_width, screen_height };
 
@@ -629,7 +656,6 @@ int main(int argc, char* argv[])
     SDL_Texture* bg_texture = CreateTextureImg("Assets/background.png");
     int bg_width, bg_height;
     SDL_QueryTexture(bg_texture, NULL, NULL, &bg_width, &bg_height);
-
 
     Character batata{7, 3, 0, 0,
         { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG }, //rect_src
@@ -829,6 +855,9 @@ int main(int argc, char* argv[])
     }
 
     // Limpeza
+    Mix_CloseAudio();
+    Mix_HaltMusic();
+    Mix_FreeMusic(music);
     TTF_CloseFont(font);
     TTF_CloseFont(small_font);
     SDL_DestroyRenderer(g_renderer);
