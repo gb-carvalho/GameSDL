@@ -27,6 +27,7 @@
 
 #define ENEMY_DELAY 500
 #define MAX_ENEMIES  20
+#define MAX_EXP      3
 
 #define SAVE_FILE "sdl.dat"
 
@@ -65,9 +66,11 @@ public:
 class Character : public Entity {
 public:
     batataState current_state;
+    int exp;
+    int level;
 
-    Character(int spd, int lfe, int frm, int lftime, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, batataState state)
-        : Entity(spd, lfe, frm, lftime, src, dst, tex), current_state(state) {
+    Character(int spd, int lfe, int frm, int lftime, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, batataState state, int xp, int lvl)
+        : Entity(spd, lfe, frm, lftime, src, dst, tex), current_state(state), exp(xp), level(lvl) {
         UpdateHitbox();
     }
 
@@ -84,6 +87,8 @@ public:
         frame = 0;
         last_frame_time = 0;
         rect_dst = rect_dst_new;
+        exp = 0;
+        level = 0;
     }
 
     void updateState(batataState newState) {
@@ -205,6 +210,7 @@ bool resolved_collision[MAX_ENEMIES][MAX_ENEMIES] = { false };
 Uint32 last_enemy_time = 0;
 
 DynamicText life_text;
+DynamicText level_text;
 DynamicText title_text;
 DynamicText kill_count_text;
 DynamicText stopwatch_text;
@@ -482,7 +488,7 @@ void UpdateProjectiles(int width_limit, int height_limit)
     }
 }
 
-void CheckProjectileCollisionWithEnemy(SDL_Rect enemy_rect, int &enemy_life, bool &active, SDL_Rect camera, int &kill_count, TTF_Font* font)
+void CheckProjectileCollisionWithEnemy(Character &character, SDL_Rect enemy_rect, int &enemy_life, bool &active, SDL_Rect camera, int &kill_count, TTF_Font* font)
 {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         if (projectiles[i].is_active && CheckCollision(projectiles[i].hitbox, enemy_rect, camera)) {
@@ -491,6 +497,12 @@ void CheckProjectileCollisionWithEnemy(SDL_Rect enemy_rect, int &enemy_life, boo
             if (enemy_life <= 0) {
                 kill_count++;
                 kill_count_text.Update(g_renderer, font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 }, { 0, 0, 0 });
+                character.exp++;
+                if (character.exp >= MAX_EXP) {
+                    character.exp = 0;
+                    character.level++;
+                    level_text.Update(g_renderer, font, "Level: " + std::to_string(character.level), { 255, 255, 255 }, { 0, 0, 0 });
+                }
                 active = 0;
             }
         }
@@ -567,7 +579,7 @@ void UpdateRenderStopwatch(int start_time, TTF_Font* font, int screen_width, int
     std::string time_formatted = TimeFormatted(elapsed_time);
 
     stopwatch_text.Update(g_renderer, font, time_formatted, { 255, 255, 255 }, { 0, 0, 0 });
-    stopwatch_text.Render(g_renderer, screen_width - 30 - (stopwatch_text.rect.w), 20, true);
+    stopwatch_text.Render(g_renderer, screen_width/1.3 - (stopwatch_text.rect.w), 20, true);
 }
 
 void LoadGame(const std::string& file_name, int& kill_count, int& elapsed_time) 
@@ -625,6 +637,19 @@ void ResetGame(int &kill_count, Character* batata, int bg_width, int bg_height, 
     stopwatch_text.Update(g_renderer, font, std::to_string(elapsed_time), { 255, 255, 255 }, { 0, 0, 0 });
     kill_count_text.Update(g_renderer, font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 }, { 0, 0, 0 });
     life_text.Update(g_renderer, font, "Lifes: " + std::to_string(batata->life), { 255, 255, 255 }, { 0, 0, 0 });
+    level_text.Update(g_renderer, font, "Level: " + std::to_string(batata->level), { 255, 255, 255 }, { 0, 0, 0 });
+}
+
+void RenderExpBar(int screen_width, int exp) {
+    SDL_Rect exp_bar_rect = { 8, 8, screen_width - 20, 10 };
+    SDL_SetRenderDrawColor(g_renderer, 230, 230, 230, 0);
+    SDL_RenderDrawRect(g_renderer, &exp_bar_rect);
+
+    int filled = (exp * (screen_width - 22)) / MAX_EXP;
+
+    SDL_Rect filled_rect = { 9, 9, filled, 8 };
+    SDL_SetRenderDrawColor(g_renderer, 0, 255, 0, 255); 
+    SDL_RenderFillRect(g_renderer, &filled_rect);
 }
 
 int main(int argc, char* argv[]) 
@@ -661,7 +686,7 @@ int main(int argc, char* argv[])
         { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG }, //rect_src
         { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER }, //rect_dst
         CreateTextureImg("Assets/batata_spritesheet.png"), //texture
-        IDLE };
+        IDLE, 0, 0};
 
     SDL_Texture* projectile_texture = CreateTextureImg("Assets/mage-bullet-13x13.png");
     SDL_Texture* enemy_texture = CreateTextureImg("Assets/mage_spritesheet_85x94.png");
@@ -802,7 +827,7 @@ int main(int argc, char* argv[])
                         }
                     }
 
-                    CheckProjectileCollisionWithEnemy(enemies[i].hitbox, enemies[i].life, enemies[i].is_active, camera, kill_count, small_font);
+                    CheckProjectileCollisionWithEnemy(batata, enemies[i].hitbox, enemies[i].life, enemies[i].is_active, camera, kill_count, small_font);
                     for (int j = i + 1; j < MAX_ENEMIES; j++) {
                         if (!enemies[j].is_active || resolved_collision[i][j]) continue;
                         resolveCollision(&enemies[i].rect_dst, &enemies[j].rect_dst);
@@ -813,8 +838,11 @@ int main(int argc, char* argv[])
             }
 
             UpdateRenderStopwatch(start_time, small_font, screen_width, elapsed_time);
+            
             life_text.Render(g_renderer, 50, 20, true);
             kill_count_text.Render(g_renderer, screen_width / 2 - kill_count_text.rect.w / 2, 20, true);
+            level_text.Render(g_renderer, screen_width - 30 - (level_text.rect.w), 20, true);
+            RenderExpBar(screen_width, batata.exp);
 
             memset(resolved_collision, 0, sizeof(resolved_collision));
 
