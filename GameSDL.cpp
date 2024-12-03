@@ -5,6 +5,7 @@
 #include <SDL_mixer.h>
 #include <iostream>
 #include <fstream>
+#include <vector>
 
 #define CHARACTER_WIDTH_ORIG    32 //Size of character width in sprite
 #define CHARACTER_HEIGHT_ORIG   32 //Size of character height in sprite
@@ -13,9 +14,10 @@
 
 #define ENEMY_MAGE_WIDTH_ORIG  85
 #define ENEMY_MAGE_HEIGHT_ORIG 94
-
 #define PROJECTILE_WIDTH_ORIG  13
 #define PROJECTILE_HEIGTH_ORIG 13
+#define CARD_WIDTH 542
+#define CARD_HEIGHT 809
 
 #define ANIMATION_SPEED  160
 #define WALK_FRAME_COUNT 4
@@ -27,12 +29,13 @@
 
 #define ENEMY_DELAY 500
 #define MAX_ENEMIES  20
-#define MAX_EXP      3
+#define MAX_EXP      10
+#define MAX_CARDS    3
 
 #define SAVE_FILE "sdl.dat"
 
 enum batataState { IDLE, WALKING };
-enum gameState { TITLE_SCREEN, PLAYING, GAME_OVER };
+enum gameState { TITLE_SCREEN, PLAYING, CARD_SELECTOR, GAME_OVER };
 
 class Entity {
 public:
@@ -44,6 +47,11 @@ public:
     SDL_Rect rect_dst;
     SDL_Rect hitbox;
     SDL_Texture* texture;
+
+    Entity()
+        : speed(0), life(0), frame(0), last_frame_time(0),
+        rect_src{ 0, 0, 0, 0 }, rect_dst{ 0, 0, 0, 0 }, hitbox{ 0, 0, 0, 0 },
+        texture(nullptr) {}
 
     Entity(int spd, int lfe, int frm, int lftime, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex)
         : speed(spd), life(lfe), frame(frm), last_frame_time(lftime), rect_src(src), rect_dst(dst), texture(tex) {
@@ -66,11 +74,10 @@ public:
 class Character : public Entity {
 public:
     batataState current_state;
-    int exp;
-    int level;
+    int exp, level, projectile_delay;
 
-    Character(int spd, int lfe, int frm, int lftime, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, batataState state, int xp, int lvl)
-        : Entity(spd, lfe, frm, lftime, src, dst, tex), current_state(state), exp(xp), level(lvl) {
+    Character(int spd, int lfe, int frm, int lftime, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, batataState state, int xp, int lvl, int prjctle_delay)
+        : Entity(spd, lfe, frm, lftime, src, dst, tex), current_state(state), exp(xp), level(lvl), projectile_delay(prjctle_delay) {
         UpdateHitbox();
     }
 
@@ -146,6 +153,27 @@ public:
     void deactivate() {
         is_active = false;
     }
+};
+
+
+class Card : public Entity {
+public:
+    std::string name;
+    std::string description;
+
+    Card()
+        : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), name(""), description("") {}
+
+    Card(SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, std::string nme, std::string dscrption)
+        : Entity(0, 0, 0, 0, src, dst, tex), name(nme), description(dscrption){
+        //UpdateHitbox();
+    }
+};
+
+std::vector<Card> cards = {
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, nullptr, "Fire Rate", "Shoot faster" },
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, nullptr, "Heal", "Restore 1 health point." },
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, nullptr, "Speed", "Gain 1 speed points." }
 };
 
 struct DynamicText {
@@ -424,13 +452,12 @@ void CalculateDirection(SDL_Rect a, SDL_Rect b, Projectile* projectile)
     }
 }
 
-
-void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture)
+void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture, int projectile_delay)
 {
     float magnitude;
 
     Uint32 current_time = SDL_GetTicks();
-    if ( current_time > last_projectile_time + PROJECTILE_DELAY) {
+    if ( current_time > last_projectile_time + projectile_delay) {
         for (int i = 0; i < MAX_PROJECTILES; i++) {
             if (!projectiles[i].is_active) {
 
@@ -488,7 +515,15 @@ void UpdateProjectiles(int width_limit, int height_limit)
     }
 }
 
-void CheckProjectileCollisionWithEnemy(Character &character, SDL_Rect enemy_rect, int &enemy_life, bool &active, SDL_Rect camera, int &kill_count, TTF_Font* font)
+void LevelUp(Character& character, int& current_game_state, TTF_Font* font) {
+    character.exp = 0;
+    character.level++;
+    current_game_state = CARD_SELECTOR;
+    level_text.Update(g_renderer, font, "Level: " + std::to_string(character.level), { 255, 255, 255 }, { 0, 0, 0 });
+}
+
+void CheckProjectileCollisionWithEnemy(Character &character, SDL_Rect enemy_rect, int &enemy_life, bool &active, SDL_Rect camera, int &kill_count, 
+                                        TTF_Font* font, int &current_game_state)
 {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         if (projectiles[i].is_active && CheckCollision(projectiles[i].hitbox, enemy_rect, camera)) {
@@ -499,9 +534,7 @@ void CheckProjectileCollisionWithEnemy(Character &character, SDL_Rect enemy_rect
                 kill_count_text.Update(g_renderer, font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 }, { 0, 0, 0 });
                 character.exp++;
                 if (character.exp >= MAX_EXP) {
-                    character.exp = 0;
-                    character.level++;
-                    level_text.Update(g_renderer, font, "Level: " + std::to_string(character.level), { 255, 255, 255 }, { 0, 0, 0 });
+                    LevelUp(character, current_game_state, font);
                 }
                 active = 0;
             }
@@ -652,6 +685,65 @@ void RenderExpBar(int screen_width, int exp) {
     SDL_RenderFillRect(g_renderer, &filled_rect);
 }
 
+void DrawThickRect(SDL_Renderer* renderer, SDL_Rect* rect, int thickness) {
+    for (int i = 0; i < thickness; i++) {
+        SDL_Rect thick_rect = {
+            rect->x + i,
+            rect->y + i,
+            rect->w - 2 * i,
+            rect->h - 2 * i
+        };
+        SDL_RenderDrawRect(renderer, &thick_rect);
+    }
+}
+
+void RenderCardInfo(const Card& card, TTF_Font* font, int screen_width, int screen_height) {
+    SDL_Color text_color = { 255, 255, 255};
+    SDL_Color shadow_color = { 0, 0, 0 };
+    // Renderizar o nome do card
+    DynamicText card_name_text;
+    card_name_text.Update(g_renderer, font, card.name, text_color, shadow_color);
+    card_name_text.Render(g_renderer, 
+                            card.rect_dst.x + ( card.rect_dst.w / 2 ) - card_name_text.rect.w / 2, 
+                            card.rect_dst.y + ( card.rect_dst.h / 4 ), true);
+
+    // Renderizar a descrição do card
+    DynamicText card_description_text;
+    card_description_text.Update(g_renderer, font, card.description, text_color, shadow_color);
+    card_description_text.Render(g_renderer, 
+                                    card.rect_dst.x + ( card.rect_dst.w / 2 ) - card_description_text.rect.w / 2,
+                                    card.rect_dst.y + ( card.rect_dst.h / 2 ), true);
+}
+
+void RenderCardSelection(int card_selected, SDL_Texture* card_texture, TTF_Font* small_font, int screen_width, int screen_height) {
+    for (int i = 0; i < MAX_CARDS; i++) {
+        int spacing = CARD_WIDTH / 4;
+        int total_width = MAX_CARDS * (CARD_WIDTH / 2);
+        int start_x = (screen_height / 2) - (total_width / 8);
+
+        cards[i].rect_src = { 0, 0, CARD_WIDTH, CARD_HEIGHT };
+        cards[i].rect_dst = { start_x + i * (CARD_WIDTH / 2 + spacing),
+                                (screen_height / 2) - (CARD_HEIGHT / 4),
+                                CARD_WIDTH / 2,
+                                CARD_HEIGHT / 2 };
+        cards[i].texture = card_texture;
+        SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
+        DrawThickRect(g_renderer, &cards[i].rect_dst, 5);
+        SDL_RenderCopy(g_renderer, cards[i].texture, &cards[i].rect_src, &cards[i].rect_dst);
+        RenderCardInfo(cards[i], small_font, screen_width, screen_height);
+        if (i == card_selected) {
+            SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255);
+            DrawThickRect(g_renderer, &cards[i].rect_dst, 5);
+        }
+    }
+}
+
+void SelectCard(std::string card_name, Character &character, TTF_Font* font) {
+    if (card_name == "Fire Rate") character.projectile_delay = character.projectile_delay * 0.90;
+    if (card_name == "Heal") { character.life++; life_text.Update(g_renderer, font, "Lifes: " + std::to_string(character.life), { 255, 255, 255 }, { 0, 0, 0 });}
+    if (card_name == "Speed") character.speed = character.speed + 1;
+}
+
 int main(int argc, char* argv[]) 
 {
 
@@ -686,10 +778,11 @@ int main(int argc, char* argv[])
         { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG }, //rect_src
         { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER }, //rect_dst
         CreateTextureImg("Assets/batata_spritesheet.png"), //texture
-        IDLE, 0, 0};
+        IDLE, 0, 0, PROJECTILE_DELAY};
 
     SDL_Texture* projectile_texture = CreateTextureImg("Assets/mage-bullet-13x13.png");
     SDL_Texture* enemy_texture = CreateTextureImg("Assets/mage_spritesheet_85x94.png");
+    SDL_Texture* card_texture = CreateTextureImg("Assets/generic_card.png");
 
     //Font
     TTF_Font* font = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf",48);
@@ -709,6 +802,7 @@ int main(int argc, char* argv[])
         SDL_Quit();
     }
 
+    int card_selected = 1;
     Uint32 last_damage_time = 0;
     const Uint32 damage_cooldown = 500;
     SDL_Event event;
@@ -717,14 +811,17 @@ int main(int argc, char* argv[])
     int kill_count;
     int start_time;
     int elapsed_time;
-
+    bool key_pressed = false;
     while (running) {
 
         const Uint8* keyState = SDL_GetKeyboardState(NULL);
-        while (SDL_PollEvent(&event)) {
-            // Verificar se o jogo foi fechado
-            if (event.type == SDL_QUIT) {
-                running = false;
+
+        if (current_game_state != CARD_SELECTOR) {
+            while (SDL_PollEvent(&event)) {
+                // Verificar se o jogo foi fechado
+                if (event.type == SDL_QUIT) {
+                    running = false;
+                }
             }
         }
 
@@ -827,7 +924,7 @@ int main(int argc, char* argv[])
                         }
                     }
 
-                    CheckProjectileCollisionWithEnemy(batata, enemies[i].hitbox, enemies[i].life, enemies[i].is_active, camera, kill_count, small_font);
+                    CheckProjectileCollisionWithEnemy(batata, enemies[i].hitbox, enemies[i].life, enemies[i].is_active, camera, kill_count, small_font, current_game_state);
                     for (int j = i + 1; j < MAX_ENEMIES; j++) {
                         if (!enemies[j].is_active || resolved_collision[i][j]) continue;
                         resolveCollision(&enemies[i].rect_dst, &enemies[j].rect_dst);
@@ -846,11 +943,48 @@ int main(int argc, char* argv[])
 
             memset(resolved_collision, 0, sizeof(resolved_collision));
 
-            FireProjectile(batata.rect_dst, projectile_texture);
+            FireProjectile(batata.rect_dst, projectile_texture, batata.projectile_delay);
             UpdateProjectiles(bg_width, bg_height);
             RenderProjectiles(camera);
             break;
         }
+        case CARD_SELECTOR:
+            while (SDL_PollEvent(&event)) {
+                if (event.type == SDL_QUIT) {
+                    running = false;
+                }
+                else if (event.type == SDL_KEYDOWN && !key_pressed) {
+                    key_pressed = true; 
+
+                    switch (event.key.keysym.scancode) {
+                    case SDL_SCANCODE_RETURN: 
+                        SelectCard(cards[card_selected].name, batata, small_font);
+                        current_game_state = PLAYING;
+                        break;
+
+                    case SDL_SCANCODE_A: 
+                    case SDL_SCANCODE_LEFT:
+                        card_selected--;
+                        if (card_selected < 0) card_selected = MAX_CARDS - 1;
+                        break;
+
+                    case SDL_SCANCODE_D: 
+                    case SDL_SCANCODE_RIGHT:
+                        card_selected++;
+                        if (card_selected >= MAX_CARDS) card_selected = 0;
+                        break;
+
+                    default:
+                        break;
+                    }
+                }
+                else if (event.type == SDL_KEYUP) {
+                    key_pressed = false;
+                }
+            }
+            RenderCardSelection(card_selected, card_texture, small_font, screen_width, screen_height);
+
+            break;
         case GAME_OVER:
 
             int kill_count_save_file, elapsed_time_save_file;
