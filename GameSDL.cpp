@@ -16,21 +16,22 @@
 #define ENEMY_MAGE_HEIGHT_ORIG 94
 #define PROJECTILE_WIDTH_ORIG  13
 #define PROJECTILE_HEIGTH_ORIG 13
-#define CARD_WIDTH 542
-#define CARD_HEIGHT 809
+#define CARD_WIDTH             542
+#define CARD_HEIGHT            809
 
 #define ANIMATION_SPEED  160
 #define WALK_FRAME_COUNT 4
 #define IDLE_FRAME_COUNT 2
 
-#define PROJECTILE_DELAY 1000
-#define PROJECTILE_SPEED 10
+#define PROJECTILE_DELAY 10000
+#define PROJECTILE_SPEED 15
 #define MAX_PROJECTILES  100
 
-#define ENEMY_DELAY 500
-#define MAX_ENEMIES  20
-#define MAX_EXP      10
-#define MAX_CARDS    3
+#define DAMAGE_COOLDOWN  500
+#define ENEMY_DELAY      500
+#define MAX_ENEMIES      20
+#define MAX_EXP          10
+#define MAX_CARDS        3
 
 #define SAVE_FILE "sdl.dat"
 
@@ -74,10 +75,11 @@ public:
 class Character : public Entity {
 public:
     batataState current_state;
-    int exp, level, projectile_delay;
+    int exp, level, projectile_delay, last_damage_time;
+    bool took_damage;
 
-    Character(int spd, int lfe, int frm, int lftime, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, batataState state, int xp, int lvl, int prjctle_delay)
-        : Entity(spd, lfe, frm, lftime, src, dst, tex), current_state(state), exp(xp), level(lvl), projectile_delay(prjctle_delay) {
+    Character(int spd, int lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, batataState state, int prjctle_delay)
+        : Entity(spd, lfe, 0, 0, src, dst, tex), current_state(state), exp(0), level(0), projectile_delay(prjctle_delay), last_damage_time(0), took_damage(false) {
         UpdateHitbox();
     }
 
@@ -673,7 +675,8 @@ void ResetGame(int &kill_count, Character* batata, int bg_width, int bg_height, 
     level_text.Update(g_renderer, font, "Level: " + std::to_string(batata->level), { 255, 255, 255 }, { 0, 0, 0 });
 }
 
-void RenderExpBar(int screen_width, int exp) {
+void RenderExpBar(int screen_width, int exp) 
+{
     SDL_Rect exp_bar_rect = { 8, 8, screen_width - 20, 10 };
     SDL_SetRenderDrawColor(g_renderer, 230, 230, 230, 0);
     SDL_RenderDrawRect(g_renderer, &exp_bar_rect);
@@ -685,7 +688,8 @@ void RenderExpBar(int screen_width, int exp) {
     SDL_RenderFillRect(g_renderer, &filled_rect);
 }
 
-void DrawThickRect(SDL_Renderer* renderer, SDL_Rect* rect, int thickness) {
+void DrawThickRect(SDL_Renderer* renderer, SDL_Rect* rect, int thickness) 
+{
     for (int i = 0; i < thickness; i++) {
         SDL_Rect thick_rect = {
             rect->x + i,
@@ -697,7 +701,8 @@ void DrawThickRect(SDL_Renderer* renderer, SDL_Rect* rect, int thickness) {
     }
 }
 
-void RenderCardInfo(const Card& card, TTF_Font* font, int screen_width, int screen_height) {
+void RenderCardInfo(const Card& card, TTF_Font* font, int screen_width, int screen_height) 
+{
     SDL_Color text_color = { 255, 255, 255};
     SDL_Color shadow_color = { 0, 0, 0 };
     // Renderizar o nome do card
@@ -715,7 +720,8 @@ void RenderCardInfo(const Card& card, TTF_Font* font, int screen_width, int scre
                                     card.rect_dst.y + ( card.rect_dst.h / 2 ), true);
 }
 
-void RenderCardSelection(int card_selected, SDL_Texture* card_texture, TTF_Font* small_font, int screen_width, int screen_height) {
+void RenderCardSelection(int card_selected, SDL_Texture* card_texture, TTF_Font* small_font, int screen_width, int screen_height) 
+{
     for (int i = 0; i < MAX_CARDS; i++) {
         int spacing = CARD_WIDTH / 4;
         int total_width = MAX_CARDS * (CARD_WIDTH / 2);
@@ -738,10 +744,24 @@ void RenderCardSelection(int card_selected, SDL_Texture* card_texture, TTF_Font*
     }
 }
 
-void SelectCard(std::string card_name, Character &character, TTF_Font* font) {
+void SelectCard(std::string card_name, Character &character, TTF_Font* font) 
+{
     if (card_name == "Fire Rate") character.projectile_delay = character.projectile_delay * 0.90;
     if (card_name == "Heal") { character.life++; life_text.Update(g_renderer, font, "Lifes: " + std::to_string(character.life), { 255, 255, 255 }, { 0, 0, 0 });}
     if (card_name == "Speed") character.speed = character.speed + 1;
+}
+
+void DamageColor(SDL_Texture *texture, int last_damage_time, bool &took_damage) 
+{
+    if (took_damage) {
+        SDL_SetTextureColorMod(texture, 255, 0, 0);
+        if (SDL_GetTicks() > last_damage_time + 200) {
+            took_damage = false;
+        }
+    }
+    else {
+        SDL_SetTextureColorMod(texture, 255, 255, 255);
+    }
 }
 
 int main(int argc, char* argv[]) 
@@ -774,11 +794,11 @@ int main(int argc, char* argv[])
     int bg_width, bg_height;
     SDL_QueryTexture(bg_texture, NULL, NULL, &bg_width, &bg_height);
 
-    Character batata{7, 3, 0, 0,
+    Character batata{7, 3,
         { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG }, //rect_src
         { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER }, //rect_dst
         CreateTextureImg("Assets/batata_spritesheet.png"), //texture
-        IDLE, 0, 0, PROJECTILE_DELAY};
+        IDLE, PROJECTILE_DELAY};
 
     SDL_Texture* projectile_texture = CreateTextureImg("Assets/mage-bullet-13x13.png");
     SDL_Texture* enemy_texture = CreateTextureImg("Assets/mage_spritesheet_85x94.png");
@@ -803,8 +823,6 @@ int main(int argc, char* argv[])
     }
 
     int card_selected = 1;
-    Uint32 last_damage_time = 0;
-    const Uint32 damage_cooldown = 500;
     SDL_Event event;
     bool running = true;
     int current_game_state = TITLE_SCREEN;
@@ -812,6 +830,7 @@ int main(int argc, char* argv[])
     int start_time;
     int elapsed_time;
     bool key_pressed = false;
+
     while (running) {
 
         const Uint8* keyState = SDL_GetKeyboardState(NULL);
@@ -891,6 +910,8 @@ int main(int argc, char* argv[])
             SDL_Rect bg_render_rect = { 0, 0, bg_width, bg_height };
             SDL_RenderCopy(g_renderer, bg_texture, &camera, nullptr);
 
+            
+            DamageColor(batata.texture, batata.last_damage_time, batata.took_damage);
             SDL_Rect player_render_rect = {
                  batata.rect_dst.x - camera.x,
                  batata.rect_dst.y - camera.y,
@@ -913,10 +934,11 @@ int main(int argc, char* argv[])
 
                     if (CheckCollision(batata.hitbox, enemies[i].hitbox, camera)) {
                         Uint32 current_time = SDL_GetTicks();
-                        if (current_time > last_damage_time + damage_cooldown) {
+                        if (current_time > batata.last_damage_time + DAMAGE_COOLDOWN) {
                             batata.life -= 1;
+                            batata.took_damage = true;
                             life_text.Update(g_renderer, small_font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 }, { 0, 0, 0 });
-                            last_damage_time = current_time;
+                            batata.last_damage_time = current_time;
 
                             if (batata.life <= 0) {
                                 current_game_state = GAME_OVER;
