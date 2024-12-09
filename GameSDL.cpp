@@ -412,7 +412,7 @@ void UpdateEnemyPosition(SDL_Rect* enemy_rect_dst, SDL_Rect player_rect,int enem
         enemy_rect_dst->x += static_cast<int>((diff_x / magnitude) * enemy_speed);
         enemy_rect_dst->y += static_cast<int>((diff_y / magnitude) * enemy_speed);
     }
-};
+}
 
 void UpdateAnimation(characterState current_state, SDL_Rect& src_rect, int &frame, Uint32 &last_frame_time, int width, int height, 
                      int walk_frame_count, int idle_frame_count) 
@@ -779,7 +779,7 @@ void DamageColor(SDL_Texture *texture, int last_damage_time, bool &took_damage)
     }
 }
 
- void MoveCharacter(Character *character, const Uint8* keyState, int bg_width, int bg_height)
+void MoveCharacter(Character *character, const Uint8* keyState, int bg_width, int bg_height)
 {
     float dy = 0, dx = 0;
     character->current_state = IDLE;
@@ -858,9 +858,10 @@ int main(int argc, char* argv[])
     SDL_Texture* projectile_texture = CreateTextureImg("Assets/mage-bullet-13x13.png");
     SDL_Texture* enemy_texture = CreateTextureImg("Assets/mage_spritesheet_85x94.png");
     SDL_Texture* card_texture = CreateTextureImg("Assets/generic_card.png");
+    SDL_Texture* title_texture = CreateTextureImg("Assets/title.png");
 
     //Font
-    TTF_Font* font = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf",48);
+    TTF_Font* font = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf", 128);
     if (!font) {
         SDL_Log("Error loading font: %s", TTF_GetError());
         SDL_DestroyRenderer(g_renderer);
@@ -904,16 +905,18 @@ int main(int argc, char* argv[])
             SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
             SDL_RenderClear(g_renderer);
 
-            title_text.Update(g_renderer, font, "Batata Game", { 238, 173, 45 }, { 255, 255, 255 });
-            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 4 - title_text.rect.h / 2, false);
+            SDL_RenderCopy(g_renderer, title_texture, nullptr, nullptr);
+
+            title_text.Update(g_renderer, font, "Batata Game", { 0, 0, 0 }, { 255, 255, 255 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 4 - title_text.rect.h / 2, true);
             title_text.Update(g_renderer, small_font, "Press Enter to start", { 255, 255, 255 }, { 0, 0, 0 });
-            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - title_text.rect.h / 2, false);
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - title_text.rect.h / 2 + 20, true);
 
             LoadGame(SAVE_FILE, kill_count, elapsed_time);
-            title_text.Update(g_renderer, small_font, "Kill record: " + std::to_string(kill_count), { 255, 50, 50 }, { 0, 0, 0 });
-            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 + 80, true);
-            title_text.Update(g_renderer, small_font, "Time record: " + TimeFormatted(elapsed_time), { 255, 50, 50 }, { 0, 0, 0 });
-            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 + 120, true);
+            title_text.Update(g_renderer, small_font, "Kill record: " + std::to_string(kill_count), { 0, 0, 0 }, { 255, 50, 50 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 + 360, true);
+            title_text.Update(g_renderer, small_font, "Time record: " + TimeFormatted(elapsed_time), { 0, 0, 0 }, { 255, 50, 50 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 + 390, true);
 
             if (keyState[SDL_SCANCODE_RETURN]) {
                 ResetGame(kill_count, &character, bg_width, bg_height, start_time, elapsed_time, small_font);
