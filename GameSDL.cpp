@@ -279,19 +279,34 @@ void InitRenderer()
     }
 }
 
-Mix_Music* InitMusic()
+void InitSDLMusic()
 {
     if (SDL_Init(SDL_INIT_AUDIO) < 0) {
         SDL_Log("Erro ao inicializar o SDL: %s", SDL_GetError());
-        return nullptr;
+        SDL_Quit();
     }
 
     if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
         SDL_Log("Erro ao inicializar SDL_mixer : %s", Mix_GetError());
+        SDL_Quit();
+    }
+}
+
+Mix_Chunk* InitSoundEffect(const char* sound_path)
+{
+    Mix_Chunk* sound = Mix_LoadWAV(sound_path);
+    if (!sound) {
+        SDL_Log("Erro ao carregar som: %s", Mix_GetError());
         return nullptr;
     }
 
-    Mix_Music* music = Mix_LoadMUS("Assets/music.mp3");
+    Mix_VolumeChunk(sound, MIX_MAX_VOLUME / 30);
+    return sound;
+}
+
+Mix_Music* InitMusic(const char* music_path, int loops)
+{
+    Mix_Music* music = Mix_LoadMUS(music_path);
     if (!music) {
         SDL_Log("Erro ao carregar música: %s", Mix_GetError());
         Mix_CloseAudio();
@@ -299,7 +314,7 @@ Mix_Music* InitMusic()
         return nullptr;
     }
     Mix_VolumeMusic(MIX_MAX_VOLUME / 30);
-    Mix_PlayMusic(music, -1);
+    Mix_PlayMusic(music, loops);
 
     return music;
 }
@@ -785,7 +800,10 @@ int main(int argc, char* argv[])
 
     InitWindow(screen_width, screen_height);
     InitRenderer();
-    Mix_Music* music = InitMusic();
+
+    InitSDLMusic();
+    Mix_Music* music = InitMusic("Assets/music.mp3", -1);
+    Mix_Chunk* damage_sound = InitSoundEffect("Assets/character_damage.wav");
 
     SDL_Rect camera = { 0, 0, screen_width, screen_height };
 
@@ -939,7 +957,7 @@ int main(int argc, char* argv[])
                             batata.took_damage = true;
                             life_text.Update(g_renderer, small_font, "Lifes: " + std::to_string(batata.life), { 255, 255, 255 }, { 0, 0, 0 });
                             batata.last_damage_time = current_time;
-
+                            Mix_PlayChannel(-1, damage_sound, 0);
                             if (batata.life <= 0) {
                                 current_game_state = GAME_OVER;
                             }
