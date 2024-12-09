@@ -779,6 +779,43 @@ void DamageColor(SDL_Texture *texture, int last_damage_time, bool &took_damage)
     }
 }
 
+ void MoveCharacter(Character *character, const Uint8* keyState, int bg_width, int bg_height)
+{
+    float dy = 0, dx = 0;
+    character->current_state = IDLE;
+
+    if ((keyState[SDL_SCANCODE_W] || keyState[SDL_SCANCODE_UP]) && character->rect_dst.y > 0) {
+        dy -= 1;
+    }
+
+    if ((keyState[SDL_SCANCODE_S] || keyState[SDL_SCANCODE_DOWN]) && character->rect_dst.y < bg_height - CHARACTER_HEIGHT_RENDER) {
+        dy += 1;
+    }
+
+    if ((keyState[SDL_SCANCODE_A] || keyState[SDL_SCANCODE_LEFT]) && character->rect_dst.x > 0) {
+        dx -= 1;
+    }
+
+    if ((keyState[SDL_SCANCODE_D] || keyState[SDL_SCANCODE_RIGHT]) && character->rect_dst.x < bg_width - CHARACTER_WIDTH_RENDER) {
+        dx += 1;
+    }
+
+    float magnitude = sqrt(dx * dx + dy * dy);
+
+    if (magnitude > 0) {
+        dx = (dx / magnitude) * character->speed;
+        dy = (dy / magnitude) * character->speed;
+    }
+
+    character->rect_dst.x += dx;
+    character->rect_dst.y += dy;
+
+    if (dx != 0 || dy != 0) {
+        character->current_state = WALKING;
+        character->UpdateHitbox();
+    }
+}
+
 int main(int argc, char* argv[]) 
 {
 
@@ -882,36 +919,11 @@ int main(int argc, char* argv[])
                 ResetGame(kill_count, &character, bg_width, bg_height, start_time, elapsed_time, small_font);
                 current_game_state = PLAYING;
             }
-
-
             break;
+
         case PLAYING: {
 
-            character.current_state = IDLE;
-            if ((keyState[SDL_SCANCODE_W] || keyState[SDL_SCANCODE_UP]) && character.rect_dst.y > 0) {
-                character.rect_dst.y -= character.speed;
-                character.current_state = WALKING;
-                character.UpdateHitbox();
-            }
-
-            if ((keyState[SDL_SCANCODE_S] || keyState[SDL_SCANCODE_DOWN]) && character.rect_dst.y < bg_height - CHARACTER_HEIGHT_RENDER) {
-                character.rect_dst.y += character.speed;
-                character.current_state = WALKING;
-                character.UpdateHitbox();
-            }
-
-            if ((keyState[SDL_SCANCODE_A] || keyState[SDL_SCANCODE_LEFT]) && character.rect_dst.x > 0) {
-                character.rect_dst.x -= character.speed;
-                character.current_state = WALKING;
-                character.UpdateHitbox();
-            }
-
-            if ((keyState[SDL_SCANCODE_D] || keyState[SDL_SCANCODE_RIGHT]) && character.rect_dst.x < bg_width - CHARACTER_WIDTH_RENDER) {
-                character.rect_dst.x += character.speed;
-                character.current_state = WALKING;
-                character.UpdateHitbox();
-            }
-
+            MoveCharacter(&character, keyState, bg_width, bg_height);
             UpdateAnimation(character.current_state, character.rect_src, character.frame, character.last_frame_time, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG, WALK_FRAME_COUNT, IDLE_FRAME_COUNT);
             for (int i = 0; i < MAX_ENEMIES; i++) {
                 if (enemies[i].is_active) UpdateAnimation(WALKING, enemies[i].rect_src, enemies[i].frame, enemies[i].last_frame_time, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG, 8, 8);
