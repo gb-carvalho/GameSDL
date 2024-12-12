@@ -23,7 +23,7 @@
 #define WALK_FRAME_COUNT 4
 #define IDLE_FRAME_COUNT 2
 
-#define PROJECTILE_DELAY 10000
+#define PROJECTILE_DELAY 1000
 #define PROJECTILE_SPEED 15
 #define MAX_PROJECTILES  100
 
@@ -98,6 +98,8 @@ public:
         rect_dst = rect_dst_new;
         exp = 0;
         level = 0;
+        speed = 0;
+        projectile_delay = PROJECTILE_DELAY;
     }
 
     void updateState(characterState newState) {
@@ -1048,9 +1050,9 @@ int main(int argc, char* argv[])
             title_text.Update(g_renderer, font, "You died", { 238, 173, 45 }, { 0, 0, 0 });
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2, true);
             title_text.Update(g_renderer, small_font, "Press Enter to restart", { 255, 255, 255 }, { 0, 0, 0 });
-            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2 + 60, true);
-            title_text.Update(g_renderer, small_font, "Press ESC to go to the title screen.", { 255, 255, 255 }, { 0, 0, 0 });
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2 + 90, true);
+            title_text.Update(g_renderer, small_font, "Press ESC to go to the title screen.", { 255, 255, 255 }, { 0, 0, 0 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2 + 120, true);
 
             if (kill_count > kill_count_save_file || elapsed_time > elapsed_time_save_file) {
                 title_text.Update(g_renderer, small_font, "Congratulations! You've set a new record!", { 255, 50, 50 }, { 0, 0, 0 });
