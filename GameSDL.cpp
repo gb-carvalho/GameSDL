@@ -6,6 +6,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <SDL_render.h>
 
 #define CHARACTER_WIDTH_ORIG    32 //Size of character width in sprite
 #define CHARACTER_HEIGHT_ORIG   32 //Size of character height in sprite
@@ -30,8 +31,9 @@
 #define DAMAGE_COOLDOWN  500
 #define ENEMY_DELAY      500
 #define MAX_ENEMIES      20
-#define MAX_EXP          10
+#define MAX_EXP          2
 #define MAX_CARDS        3
+#define MAX_CARD_LEVEL   5
 
 #define SAVE_FILE "sdl.dat"
 
@@ -44,9 +46,7 @@ public:
     int life;
     int frame;
     Uint32 last_frame_time;
-    SDL_Rect rect_src;
-    SDL_Rect rect_dst;
-    SDL_Rect hitbox;
+    SDL_Rect rect_src, rect_dst, hitbox;
     SDL_Texture* texture;
 
     Entity()
@@ -75,11 +75,12 @@ public:
 class Character : public Entity {
 public:
     characterState current_state;
-    int exp, level, projectile_delay, last_damage_time;
+    int exp, level, level_to_update, projectile_delay, last_damage_time;
     bool took_damage;
 
     Character(int spd, int lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, characterState state, int prjctle_delay)
-        : Entity(spd, lfe, 0, 0, src, dst, tex), current_state(state), exp(0), level(0), projectile_delay(prjctle_delay), last_damage_time(0), took_damage(false) {
+        : Entity(spd, lfe, 0, 0, src, dst, tex), current_state(state), exp(0), level(0), 
+            projectile_delay(prjctle_delay), last_damage_time(0), took_damage(false), level_to_update(0) {
         UpdateHitbox();
     }
 
@@ -92,13 +93,14 @@ public:
     }
   
     void reset(SDL_Rect rect_dst_new) {
-        life = 3;
+        life = 11111;
         frame = 0;
         last_frame_time = 0;
         rect_dst = rect_dst_new;
         exp = 0;
-        level = 0;
-        speed = 0;
+        level = 1;
+        level_to_update = 0;
+        speed = 7;
         projectile_delay = PROJECTILE_DELAY;
     }
 
@@ -162,22 +164,22 @@ public:
 
 class Card : public Entity {
 public:
-    std::string name;
-    std::string description;
+    std::string name, description;
+    int level;
 
     Card()
-        : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), name(""), description("") {}
+        : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), name(""), description(""), level(0) {}
 
-    Card(SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, std::string nme, std::string dscrption)
-        : Entity(0, 0, 0, 0, src, dst, tex), name(nme), description(dscrption){
+    Card(SDL_Rect src, SDL_Rect dst, std::string nme, std::string dscrption, int lvl)
+        : Entity(0, 0, 0, 0, src, dst, nullptr), name(nme), description(dscrption), level(lvl){
         //UpdateHitbox();
     }
 };
 
 std::vector<Card> cards = {
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, nullptr, "Fire Rate", "Shoot faster" },
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, nullptr, "Heal", "Restore 1 health point." },
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, nullptr, "Speed", "Gain 1 speed points." }
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Fire Rate", "Shoot faster", 0},
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Heal", "Restore 1 health point.", 0},
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Speed", "Gain 1 speed points.", 0}
 };
 
 struct DynamicText {
@@ -273,7 +275,7 @@ void InitWindow(int screen_width, int screen_height)
 void InitRenderer() 
 {
     // Cria o renderizador
-    g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED);
+    g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (!g_renderer) {
         SDL_Log("Error creating render: %s", SDL_GetError());
         SDL_DestroyWindow(g_window);
@@ -536,8 +538,8 @@ void UpdateProjectiles(int width_limit, int height_limit)
 
 void LevelUp(Character& character, int& current_game_state, TTF_Font* font) {
     character.exp = 0;
+    character.level_to_update++;
     character.level++;
-    current_game_state = CARD_SELECTOR;
     level_text.Update(g_renderer, font, "Level: " + std::to_string(character.level), { 255, 255, 255 }, { 0, 0, 0 });
 }
 
@@ -624,14 +626,23 @@ std::string TimeFormatted(int time_in_seconds){
     return time_formatted;
 }
 
-void UpdateRenderStopwatch(int start_time, TTF_Font* font, int screen_width, int &elapsed_time) 
+void NewWave(int &current_game_state, int &wave) {
+    wave++;
+    current_game_state = CARD_SELECTOR;
+}
+
+void UpdateRenderStopwatchWave(int &start_time, int &time_left ,int screen_width, int &elapsed_time, int &wave, int &current_game_state, TTF_Font* font)
 {
+    int wave_time_legth = 20;
     elapsed_time = (SDL_GetTicks() - start_time) / 1000;
+    if (current_game_state == PLAYING) time_left = wave_time_legth - elapsed_time;
+    else time_left = wave_time_legth;
 
-    std::string time_formatted = TimeFormatted(elapsed_time);
-
+    std::string time_formatted = TimeFormatted(time_left);
+    stopwatch_text.Update(g_renderer, font, "Wave " + std::to_string(wave), {255, 255, 255}, {0, 0, 0});
+    stopwatch_text.Render(g_renderer, screen_width / 2 - stopwatch_text.rect.w / 2, 20, true);
     stopwatch_text.Update(g_renderer, font, time_formatted, { 255, 255, 255 }, { 0, 0, 0 });
-    stopwatch_text.Render(g_renderer, screen_width/1.3 - (stopwatch_text.rect.w), 20, true);
+    stopwatch_text.Render(g_renderer, screen_width / 2 - stopwatch_text.rect.w / 2, 50, true);
 }
 
 void LoadGame(const std::string& file_name, int& kill_count, int& elapsed_time) 
@@ -671,7 +682,7 @@ void SaveGame(const std::string& file_name, int kill_count, int elapsed_time)
     save_file.close();
 }
 
-void ResetGame(int &kill_count, Character* character, int bg_width, int bg_height, int &start_time, int &elapsed_time, TTF_Font* font) 
+void ResetGame(int &kill_count, int &wave, Character* character, int bg_width, int bg_height, int &start_time, int &elapsed_time, TTF_Font* font) 
 {  
     for (int i = 0; i < MAX_ENEMIES; i++) {
         enemies[i].deactivate();
@@ -681,6 +692,7 @@ void ResetGame(int &kill_count, Character* character, int bg_width, int bg_heigh
         projectiles[i].deactivate();
     }
 
+    wave = 1;
     kill_count = 0;
     character->reset({ bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER });
     character->UpdateHitbox();
@@ -690,12 +702,15 @@ void ResetGame(int &kill_count, Character* character, int bg_width, int bg_heigh
     kill_count_text.Update(g_renderer, font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 }, { 0, 0, 0 });
     life_text.Update(g_renderer, font, "Lifes: " + std::to_string(character->life), { 255, 255, 255 }, { 0, 0, 0 });
     level_text.Update(g_renderer, font, "Level: " + std::to_string(character->level), { 255, 255, 255 }, { 0, 0, 0 });
+    for (int i = 0; i < cards.size(); ++i) {
+        cards[i].level = 0;
+    }
 }
 
 void RenderExpBar(int screen_width, int exp) 
 {
     SDL_Rect exp_bar_rect = { 8, 8, screen_width - 20, 10 };
-    SDL_SetRenderDrawColor(g_renderer, 230, 230, 230, 0);
+    SDL_SetRenderDrawColor(g_renderer, 230, 230, 230, 255);
     SDL_RenderDrawRect(g_renderer, &exp_bar_rect);
 
     int filled = (exp * (screen_width - 22)) / MAX_EXP;
@@ -718,16 +733,16 @@ void DrawThickRect(SDL_Renderer* renderer, SDL_Rect* rect, int thickness)
     }
 }
 
-void RenderCardInfo(const Card& card, TTF_Font* font, int screen_width, int screen_height) 
+void RenderCardInfo(const Card& card, TTF_Font* font, int screen_width, int screen_height)
 {
-    SDL_Color text_color = { 255, 255, 255};
+    SDL_Color text_color = { 255, 255, 255 };
     SDL_Color shadow_color = { 0, 0, 0 };
     // Renderizar o nome do card
     DynamicText card_name_text;
-    card_name_text.Update(g_renderer, font, card.name, text_color, shadow_color);
-    card_name_text.Render(g_renderer, 
-                            card.rect_dst.x + ( card.rect_dst.w / 2 ) - card_name_text.rect.w / 2, 
-                            card.rect_dst.y + ( card.rect_dst.h / 4 ), true);
+    card_name_text.Update(g_renderer, font, card.name + "(" + std::to_string(card.level) + "/" + std::to_string(MAX_CARD_LEVEL) + ")", text_color, shadow_color);
+    card_name_text.Render(g_renderer,
+        card.rect_dst.x + (card.rect_dst.w / 2) - card_name_text.rect.w / 2,
+        card.rect_dst.y + (card.rect_dst.h / 4), true);
 
     // Renderizar a descrição do card
     DynamicText card_description_text;
@@ -737,8 +752,16 @@ void RenderCardInfo(const Card& card, TTF_Font* font, int screen_width, int scre
                                     card.rect_dst.y + ( card.rect_dst.h / 2 ), true);
 }
 
-void RenderCardSelection(int card_selected, SDL_Texture* card_texture, TTF_Font* small_font, int screen_width, int screen_height) 
+void RenderCardSelection(int card_selected, TTF_Font* small_font, int screen_width, int screen_height, int level_to_update)
 {
+    SDL_Color text_color = { 255, 255, 255 };
+    SDL_Color shadow_color = { 0, 0, 0 };
+    DynamicText point_to_add_text;
+    point_to_add_text.Update(g_renderer, small_font, "Points: " + std::to_string(level_to_update), text_color, shadow_color);
+    point_to_add_text.Render(g_renderer,
+        screen_width/2 - point_to_add_text.rect.w/2,
+        screen_height / 2 - (CARD_WIDTH / 2), true);
+
     for (int i = 0; i < MAX_CARDS; i++) {
         int spacing = CARD_WIDTH / 4;
         int total_width = MAX_CARDS * (CARD_WIDTH / 2);
@@ -749,13 +772,15 @@ void RenderCardSelection(int card_selected, SDL_Texture* card_texture, TTF_Font*
                                 (screen_height / 2) - (CARD_HEIGHT / 4),
                                 CARD_WIDTH / 2,
                                 CARD_HEIGHT / 2 };
-        cards[i].texture = card_texture;
-        SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
-        DrawThickRect(g_renderer, &cards[i].rect_dst, 5);
-        SDL_RenderCopy(g_renderer, cards[i].texture, &cards[i].rect_src, &cards[i].rect_dst);
+        cards[i].texture = nullptr;
+        if (SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_BLEND) != 0) {
+            SDL_Log("Erro ao configurar modo de blending: %s", SDL_GetError());
+        }
+        SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 100);
+        SDL_RenderFillRect(g_renderer, &cards[i].rect_dst);
         RenderCardInfo(cards[i], small_font, screen_width, screen_height);
         if (i == card_selected) {
-            SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255);
+            SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 100);
             DrawThickRect(g_renderer, &cards[i].rect_dst, 5);
         }
     }
@@ -816,6 +841,14 @@ void MoveCharacter(Character *character, const Uint8* keyState, int bg_width, in
         character->current_state = WALKING;
         character->UpdateHitbox();
     }
+}
+
+void RenderHeader(int &start_time, int &time_left, int screen_width, int &elapsed_time, int &wave, int &current_game_state, TTF_Font* small_font, Character character) {
+    UpdateRenderStopwatchWave(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font);
+    life_text.Render(g_renderer, 50, 20, true);
+    kill_count_text.Render(g_renderer, screen_width / 1.3 - (kill_count_text.rect.w), 20, true);
+    level_text.Render(g_renderer, screen_width - 30 - (level_text.rect.w), 20, true);
+    RenderExpBar(screen_width, character.exp);
 }
 
 int main(int argc, char* argv[]) 
@@ -884,10 +917,8 @@ int main(int argc, char* argv[])
     SDL_Event event;
     bool running = true;
     int current_game_state = TITLE_SCREEN;
-    int kill_count;
-    int start_time;
-    int elapsed_time;
-    bool key_pressed = false;
+    int kill_count, start_time, elapsed_time, wave, time_left;
+    bool key_pressed = false, skip = false;
 
     while (running) {
 
@@ -921,7 +952,7 @@ int main(int argc, char* argv[])
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 + 390, true);
 
             if (keyState[SDL_SCANCODE_RETURN]) {
-                ResetGame(kill_count, &character, bg_width, bg_height, start_time, elapsed_time, small_font);
+                ResetGame(kill_count, wave, &character, bg_width, bg_height, start_time, elapsed_time, small_font);
                 current_game_state = PLAYING;
             }
             break;
@@ -991,12 +1022,8 @@ int main(int argc, char* argv[])
                 }
             }
 
-            UpdateRenderStopwatch(start_time, small_font, screen_width, elapsed_time);
-            
-            life_text.Render(g_renderer, 50, 20, true);
-            kill_count_text.Render(g_renderer, screen_width / 2 - kill_count_text.rect.w / 2, 20, true);
-            level_text.Render(g_renderer, screen_width - 30 - (level_text.rect.w), 20, true);
-            RenderExpBar(screen_width, character.exp);
+            RenderHeader(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, character);
+            if (time_left <= 0) NewWave(current_game_state, wave);         
 
             memset(resolved_collision, 0, sizeof(resolved_collision));
 
@@ -1006,26 +1033,57 @@ int main(int argc, char* argv[])
             break;
         }
         case CARD_SELECTOR:
+            if (character.level_to_update == 0 || skip) { 
+                current_game_state = PLAYING;
+                character.rect_dst = { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER };
+                start_time = SDL_GetTicks();
+
+                for (int i = 0; i < MAX_ENEMIES; i++) {
+                    enemies[i].deactivate();
+                }
+                for (int i = 0; i < MAX_PROJECTILES; i++) {
+                    projectiles[i].deactivate();
+                }
+            }else{
+                SDL_RenderCopy(g_renderer, bg_texture, &camera, nullptr);
+                RenderHeader(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, character);
+                RenderCardSelection(card_selected, small_font, screen_width, screen_height, character.level_to_update);
+            }
+
             while (SDL_PollEvent(&event)) {
                 if (event.type == SDL_QUIT) {
                     running = false;
                 }
                 else if (event.type == SDL_KEYDOWN && !key_pressed) {
-                    key_pressed = true; 
+                    key_pressed = true;
 
                     switch (event.key.keysym.scancode) {
-                    case SDL_SCANCODE_RETURN: 
-                        SelectCard(cards[card_selected].name, character, small_font);
-                        current_game_state = PLAYING;
+                    case SDL_SCANCODE_RETURN:                       
+
+                        //check if all cards are max level
+                        skip = true;
+                        for (int i = 0; i < cards.size(); i++) {
+                            if (cards[i].level < 5) {
+                                skip = false;
+                                break;
+                            }
+                        }
+                        if (skip) current_game_state = PLAYING;
+
+                        if (cards[card_selected].level < 5) {
+                            SelectCard(cards[card_selected].name, character, small_font);
+                            cards[card_selected].level++;
+                            character.level_to_update--;
+                        } 
                         break;
 
-                    case SDL_SCANCODE_A: 
+                    case SDL_SCANCODE_A:
                     case SDL_SCANCODE_LEFT:
                         card_selected--;
                         if (card_selected < 0) card_selected = MAX_CARDS - 1;
                         break;
 
-                    case SDL_SCANCODE_D: 
+                    case SDL_SCANCODE_D:
                     case SDL_SCANCODE_RIGHT:
                         card_selected++;
                         if (card_selected >= MAX_CARDS) card_selected = 0;
@@ -1039,7 +1097,6 @@ int main(int argc, char* argv[])
                     key_pressed = false;
                 }
             }
-            RenderCardSelection(card_selected, card_texture, small_font, screen_width, screen_height);
 
             break;
         case GAME_OVER:
@@ -1062,7 +1119,7 @@ int main(int argc, char* argv[])
             SaveGame(SAVE_FILE,kill_count,elapsed_time);
 
             if (keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_ESCAPE]) {
-                ResetGame(kill_count, &character, bg_width, bg_height, start_time, elapsed_time, small_font);
+                ResetGame(kill_count, wave, &character, bg_width, bg_height, start_time, elapsed_time, small_font);
                 if (keyState[SDL_SCANCODE_ESCAPE]) current_game_state = TITLE_SCREEN;
                 else if (keyState[SDL_SCANCODE_RETURN]) current_game_state = PLAYING;
             }
