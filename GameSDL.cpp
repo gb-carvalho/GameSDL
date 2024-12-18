@@ -31,7 +31,7 @@
 #define DAMAGE_COOLDOWN  500
 #define ENEMY_DELAY      500
 #define MAX_ENEMIES      20
-#define MAX_EXP          2
+#define MAX_EXP          20
 #define MAX_CARDS        3
 #define MAX_CARD_LEVEL   5
 
@@ -411,7 +411,7 @@ void UpdateEnemyPosition(SDL_Rect* enemy_rect_dst, SDL_Rect player_rect,int enem
 
     // Verifica se a magnitude é maior que zero antes de normalizar
 
-    if (magnitude > 30) {
+    if (magnitude > 20) {
         // Normaliza a direção e move o inimigo
         enemy_rect_dst->x += static_cast<int>((diff_x / magnitude) * enemy_speed);
         enemy_rect_dst->y += static_cast<int>((diff_y / magnitude) * enemy_speed);
@@ -478,7 +478,7 @@ void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture, int p
     float magnitude;
 
     Uint32 current_time = SDL_GetTicks();
-    if ( current_time > last_projectile_time + projectile_delay) {
+    if ( current_time > last_projectile_time + projectile_delay ) {
         for (int i = 0; i < MAX_PROJECTILES; i++) {
             if (!projectiles[i].is_active) {
 
@@ -574,6 +574,8 @@ void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture)
                     { rand() % bg_width, rand() % bg_height, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG }, //dest_dst
                     enemy_texture, //texture
                     true };
+
+                SDL_Log("%d %d", enemies[i].rect_dst.x, enemies[i].rect_dst.y);
                 last_enemy_time = current_time;
                 break;
             }
@@ -913,12 +915,16 @@ int main(int argc, char* argv[])
         SDL_Quit();
     }
 
+    //Init seed for random number
+    srand(static_cast<unsigned int>(time(nullptr)));
+
     int card_selected = 1;
     SDL_Event event;
     bool running = true;
     int current_game_state = TITLE_SCREEN;
     int kill_count, start_time, elapsed_time, wave, time_left;
     bool key_pressed = false, skip = false;
+
 
     while (running) {
 
