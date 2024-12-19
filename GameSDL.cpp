@@ -639,7 +639,7 @@ void NewWave(int &current_game_state, int &wave) {
 
 void UpdateRenderStopwatchWave(int &start_time, int &time_left ,int screen_width, int &elapsed_time, int &wave, int &current_game_state, TTF_Font* font, int total_pause_duration)
 {
-    int wave_time_legth = 60;
+    int wave_time_legth = 30 + ((wave - 1) * 5);
     elapsed_time = (SDL_GetTicks() - start_time - total_pause_duration) / 1000;
     if (current_game_state == PLAYING) time_left = wave_time_legth - elapsed_time;
     else time_left = wave_time_legth;
