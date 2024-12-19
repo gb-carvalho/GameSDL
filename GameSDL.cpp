@@ -38,7 +38,7 @@
 #define SAVE_FILE "sdl.dat"
 
 enum characterState { IDLE, WALKING };
-enum gameState { TITLE_SCREEN, PLAYING, CARD_SELECTOR, GAME_OVER };
+enum gameState { TITLE_SCREEN, PLAYING, CARD_SELECTOR, GAME_OVER, PAUSE };
 
 class Entity {
 public:
@@ -93,7 +93,7 @@ public:
     }
   
     void reset(SDL_Rect rect_dst_new) {
-        life = 11111;
+        life = 3;
         frame = 0;
         last_frame_time = 0;
         rect_dst = rect_dst_new;
@@ -246,6 +246,7 @@ Uint32 last_enemy_time = 0;
 DynamicText life_text;
 DynamicText level_text;
 DynamicText title_text;
+DynamicText pause_text;
 DynamicText kill_count_text;
 DynamicText stopwatch_text;
 
@@ -280,6 +281,10 @@ void InitRenderer()
         SDL_Log("Error creating render: %s", SDL_GetError());
         SDL_DestroyWindow(g_window);
         SDL_Quit();
+    }
+
+    if (SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_BLEND) != 0) {
+        SDL_Log("Erro ao configurar modo de blending: %s", SDL_GetError());
     }
 }
 
@@ -569,13 +574,12 @@ void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture)
     if(current_time > last_enemy_time + ENEMY_DELAY) {
         for (int i = 0; i < MAX_ENEMIES; i++) {
             if (!enemies[i].is_active) {
-                enemies[i] = Enemy{ 7, 1, 0, 0,
+                enemies[i] = Enemy{ 6, 1, 0, 0,
                     { 0, 0, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG },  //rect_src
                     { rand() % bg_width, rand() % bg_height, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG }, //dest_dst
                     enemy_texture, //texture
                     true };
 
-                SDL_Log("%d %d", enemies[i].rect_dst.x, enemies[i].rect_dst.y);
                 last_enemy_time = current_time;
                 break;
             }
@@ -633,10 +637,10 @@ void NewWave(int &current_game_state, int &wave) {
     current_game_state = CARD_SELECTOR;
 }
 
-void UpdateRenderStopwatchWave(int &start_time, int &time_left ,int screen_width, int &elapsed_time, int &wave, int &current_game_state, TTF_Font* font)
+void UpdateRenderStopwatchWave(int &start_time, int &time_left ,int screen_width, int &elapsed_time, int &wave, int &current_game_state, TTF_Font* font, int total_pause_duration)
 {
-    int wave_time_legth = 20;
-    elapsed_time = (SDL_GetTicks() - start_time) / 1000;
+    int wave_time_legth = 60;
+    elapsed_time = (SDL_GetTicks() - start_time - total_pause_duration) / 1000;
     if (current_game_state == PLAYING) time_left = wave_time_legth - elapsed_time;
     else time_left = wave_time_legth;
 
@@ -647,27 +651,27 @@ void UpdateRenderStopwatchWave(int &start_time, int &time_left ,int screen_width
     stopwatch_text.Render(g_renderer, screen_width / 2 - stopwatch_text.rect.w / 2, 50, true);
 }
 
-void LoadGame(const std::string& file_name, int& kill_count, int& elapsed_time) 
+void LoadGame(const std::string& file_name, int& kill_count, int& wave)
 {
     std::ifstream save_file(file_name, std::ios::binary);
     if (!save_file.is_open()) {
         SDL_Log("Error opening save file\n");
         kill_count = 0;
-        elapsed_time = 0;
+        wave = 0;
         return;
     }
 
     save_file.read(reinterpret_cast<char*>(&kill_count), sizeof(kill_count));
-    save_file.read(reinterpret_cast<char*>(&elapsed_time), sizeof(elapsed_time));
+    save_file.read(reinterpret_cast<char*>(&wave), sizeof(wave));
 
     save_file.close();   
 }
 
-void SaveGame(const std::string& file_name, int kill_count, int elapsed_time)
+void SaveGame(const std::string& file_name, int kill_count, int wave)
 {
-    int kill_count_save_file, elapsed_time_save_file;
+    int kill_count_save_file, wave_save_file;
 
-    LoadGame(file_name, kill_count_save_file, elapsed_time_save_file);
+    LoadGame(file_name, kill_count_save_file, wave_save_file);
   
     std::ofstream save_file(file_name, std::ios::binary);
     if (!save_file.is_open()) {
@@ -678,13 +682,13 @@ void SaveGame(const std::string& file_name, int kill_count, int elapsed_time)
     if (kill_count > kill_count_save_file) save_file.write(reinterpret_cast<const char*>(&kill_count), sizeof(kill_count));   
     else save_file.write(reinterpret_cast<const char*>(&kill_count_save_file), sizeof(kill_count_save_file));
     
-    if (elapsed_time > elapsed_time_save_file) save_file.write(reinterpret_cast<const char*>(&elapsed_time), sizeof(elapsed_time));
-    else save_file.write(reinterpret_cast<const char*>(&elapsed_time_save_file), sizeof(elapsed_time_save_file));
+    if (wave > wave_save_file) save_file.write(reinterpret_cast<const char*>(&wave), sizeof(wave));
+    else save_file.write(reinterpret_cast<const char*>(&wave_save_file), sizeof(wave_save_file));
 
     save_file.close();
 }
 
-void ResetGame(int &kill_count, int &wave, Character* character, int bg_width, int bg_height, int &start_time, int &elapsed_time, TTF_Font* font) 
+void ResetGame(int &kill_count, int &wave, Character* character, int bg_width, int bg_height, int &start_time, int &elapsed_time, TTF_Font* font, int &total_pause_duration)
 {  
     for (int i = 0; i < MAX_ENEMIES; i++) {
         enemies[i].deactivate();
@@ -696,6 +700,7 @@ void ResetGame(int &kill_count, int &wave, Character* character, int bg_width, i
 
     wave = 1;
     kill_count = 0;
+    total_pause_duration = 0;
     character->reset({ bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER });
     character->UpdateHitbox();
     start_time = SDL_GetTicks();
@@ -775,9 +780,7 @@ void RenderCardSelection(int card_selected, TTF_Font* small_font, int screen_wid
                                 CARD_WIDTH / 2,
                                 CARD_HEIGHT / 2 };
         cards[i].texture = nullptr;
-        if (SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_BLEND) != 0) {
-            SDL_Log("Erro ao configurar modo de blending: %s", SDL_GetError());
-        }
+
         SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 100);
         SDL_RenderFillRect(g_renderer, &cards[i].rect_dst);
         RenderCardInfo(cards[i], small_font, screen_width, screen_height);
@@ -845,8 +848,8 @@ void MoveCharacter(Character *character, const Uint8* keyState, int bg_width, in
     }
 }
 
-void RenderHeader(int &start_time, int &time_left, int screen_width, int &elapsed_time, int &wave, int &current_game_state, TTF_Font* small_font, Character character) {
-    UpdateRenderStopwatchWave(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font);
+void RenderHeader(int &start_time, int &time_left, int screen_width, int &elapsed_time, int &wave, int &current_game_state, TTF_Font* small_font, Character character, int total_pause_duration) {
+    UpdateRenderStopwatchWave(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, total_pause_duration);
     life_text.Render(g_renderer, 50, 20, true);
     kill_count_text.Render(g_renderer, screen_width / 1.3 - (kill_count_text.rect.w), 20, true);
     level_text.Render(g_renderer, screen_width - 30 - (level_text.rect.w), 20, true);
@@ -922,7 +925,7 @@ int main(int argc, char* argv[])
     SDL_Event event;
     bool running = true;
     int current_game_state = TITLE_SCREEN;
-    int kill_count, start_time, elapsed_time, wave, time_left;
+    int kill_count, start_time, elapsed_time, wave, time_left, pause_start_time = 0, total_pause_duration = 0;
     bool key_pressed = false, skip = false;
 
 
@@ -951,19 +954,21 @@ int main(int argc, char* argv[])
             title_text.Update(g_renderer, small_font, "Press Enter to start", { 255, 255, 255 }, { 0, 0, 0 });
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - title_text.rect.h / 2 + 20, true);
 
-            LoadGame(SAVE_FILE, kill_count, elapsed_time);
+            LoadGame(SAVE_FILE, kill_count, wave);
             title_text.Update(g_renderer, small_font, "Kill record: " + std::to_string(kill_count), { 0, 0, 0 }, { 255, 50, 50 });
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 + 360, true);
-            title_text.Update(g_renderer, small_font, "Time record: " + TimeFormatted(elapsed_time), { 0, 0, 0 }, { 255, 50, 50 });
+            title_text.Update(g_renderer, small_font, "Wave record: " + std::to_string(wave), { 0, 0, 0 }, { 255, 50, 50 });
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 + 390, true);
 
             if (keyState[SDL_SCANCODE_RETURN]) {
-                ResetGame(kill_count, wave, &character, bg_width, bg_height, start_time, elapsed_time, small_font);
+                ResetGame(kill_count, wave, &character, bg_width, bg_height, start_time, elapsed_time, small_font, total_pause_duration);
                 current_game_state = PLAYING;
             }
             break;
 
         case PLAYING: {
+
+            if (keyState[SDL_SCANCODE_ESCAPE]) current_game_state = PAUSE;
 
             MoveCharacter(&character, keyState, bg_width, bg_height);
             UpdateAnimation(character.current_state, character.rect_src, character.frame, character.last_frame_time, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG, WALK_FRAME_COUNT, IDLE_FRAME_COUNT);
@@ -1028,7 +1033,7 @@ int main(int argc, char* argv[])
                 }
             }
 
-            RenderHeader(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, character);
+            RenderHeader(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, character, total_pause_duration);
             if (time_left <= 0) NewWave(current_game_state, wave);         
 
             memset(resolved_collision, 0, sizeof(resolved_collision));
@@ -1041,6 +1046,7 @@ int main(int argc, char* argv[])
         case CARD_SELECTOR:
             if (character.level_to_update == 0 || skip) { 
                 current_game_state = PLAYING;
+                total_pause_duration = 0;
                 character.rect_dst = { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER };
                 start_time = SDL_GetTicks();
 
@@ -1052,7 +1058,7 @@ int main(int argc, char* argv[])
                 }
             }else{
                 SDL_RenderCopy(g_renderer, bg_texture, &camera, nullptr);
-                RenderHeader(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, character);
+                RenderHeader(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, character, total_pause_duration);
                 RenderCardSelection(card_selected, small_font, screen_width, screen_height, character.level_to_update);
             }
 
@@ -1105,10 +1111,15 @@ int main(int argc, char* argv[])
             }
 
             break;
-        case GAME_OVER:
+        case GAME_OVER: {
+
 
             int kill_count_save_file, elapsed_time_save_file;
             LoadGame("sdl.dat", kill_count_save_file, elapsed_time_save_file);
+
+            SDL_Rect dark_rect_dst = { 0, 0, screen_width, screen_height };
+            SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 2);
+            SDL_RenderFillRect(g_renderer, &dark_rect_dst);
 
             title_text.Update(g_renderer, font, "You died", { 238, 173, 45 }, { 0, 0, 0 });
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2, true);
@@ -1119,15 +1130,36 @@ int main(int argc, char* argv[])
 
             if (kill_count > kill_count_save_file || elapsed_time > elapsed_time_save_file) {
                 title_text.Update(g_renderer, small_font, "Congratulations! You've set a new record!", { 255, 50, 50 }, { 0, 0, 0 });
-                title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2 + 120, true);
+                title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2 + 150, true);
             }
 
-            SaveGame(SAVE_FILE,kill_count,elapsed_time);
+            SaveGame(SAVE_FILE, kill_count, wave);
 
             if (keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_ESCAPE]) {
-                ResetGame(kill_count, wave, &character, bg_width, bg_height, start_time, elapsed_time, small_font);
+                ResetGame(kill_count, wave, &character, bg_width, bg_height, start_time, elapsed_time, small_font, total_pause_duration);
                 if (keyState[SDL_SCANCODE_ESCAPE]) current_game_state = TITLE_SCREEN;
                 else if (keyState[SDL_SCANCODE_RETURN]) current_game_state = PLAYING;
+            }
+            break;
+        }
+        case PAUSE:
+
+            if (pause_start_time == 0) pause_start_time = SDL_GetTicks();
+
+            title_text.Update(g_renderer, font, "Paused", { 238, 173, 45 }, { 0, 0, 0 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - title_text.rect.h / 2, true);
+            title_text.Update(g_renderer, small_font, "Press Enter to resume", { 255, 255, 255 }, { 0, 0, 0 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - title_text.rect.h / 2 + 90, true);
+
+            SDL_Rect dark_rect_dst = { 0, 0, screen_width, screen_height };
+            SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 2);
+            SDL_RenderFillRect(g_renderer, &dark_rect_dst);
+
+            if (keyState[SDL_SCANCODE_RETURN]) {
+                total_pause_duration += SDL_GetTicks() - pause_start_time;
+                pause_start_time = 0;
+                last_projectile_time = SDL_GetTicks();
+                current_game_state = PLAYING;
             }
             break;
         }
