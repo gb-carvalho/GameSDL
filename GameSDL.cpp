@@ -29,7 +29,7 @@
 #define MAX_PROJECTILES  100
 
 #define DAMAGE_COOLDOWN  500
-#define ENEMY_DELAY      500
+#define ENEMY_DELAY      900
 #define MAX_ENEMIES      20
 #define MAX_EXP          20
 #define MAX_CARDS        3
@@ -568,13 +568,13 @@ void CheckProjectileCollisionWithEnemy(Character &character, SDL_Rect enemy_rect
     }
 }
 
-void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture) 
+void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave) 
 {
     Uint32 current_time = SDL_GetTicks();
     if(current_time > last_enemy_time + ENEMY_DELAY) {
         for (int i = 0; i < MAX_ENEMIES; i++) {
             if (!enemies[i].is_active) {
-                enemies[i] = Enemy{ 6, 1, 0, 0,
+                enemies[i] = Enemy{ 6, 1 + (wave - 1), 0, 0,
                     { 0, 0, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG },  //rect_src
                     { rand() % bg_width, rand() % bg_height, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG }, //dest_dst
                     enemy_texture, //texture
@@ -996,7 +996,7 @@ int main(int argc, char* argv[])
             };
             SDL_RenderCopy(g_renderer, character.texture, &character.rect_src, &player_render_rect);
 
-            SpawnEnemies(bg_width, bg_height, enemy_texture);
+            SpawnEnemies(bg_width, bg_height, enemy_texture, wave);
             for (int i = 0; i < MAX_ENEMIES; i++) {
                 if (enemies[i].is_active) {
                     UpdateEnemyPosition(&enemies[i].rect_dst, character.rect_dst, enemies[i].speed);
