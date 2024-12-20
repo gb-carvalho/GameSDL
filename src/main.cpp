@@ -8,237 +8,20 @@
 #include <vector>
 #include <SDL_render.h>
 
-#define CHARACTER_WIDTH_ORIG    32 //Size of character width in sprite
-#define CHARACTER_HEIGHT_ORIG   32 //Size of character height in sprite
-#define CHARACTER_WIDTH_RENDER  64 //Size of character width in render
-#define CHARACTER_HEIGHT_RENDER 64 //Size of character height in render
+#include "entity.hpp"
+#include "character.hpp"
+#include "enemy.hpp"
+#include "card.hpp"
+#include "projectile.hpp"
+#include "dynamic_text.hpp"
 
-#define ENEMY_MAGE_WIDTH_ORIG  85
-#define ENEMY_MAGE_HEIGHT_ORIG 94
-#define PROJECTILE_WIDTH_ORIG  13
-#define PROJECTILE_HEIGTH_ORIG 13
-#define CARD_WIDTH             542
-#define CARD_HEIGHT            809
+#define ANIMATION_SPEED        160 //Isso deveria ter valor diferente por entidade talvez
+#define FIRST_WAVE_TIME        30
+#define SAVE_FILE              "sdl.dat"
 
-#define ANIMATION_SPEED  160
-#define WALK_FRAME_COUNT 4
-#define IDLE_FRAME_COUNT 2
-
-#define PROJECTILE_DELAY 1000
-#define PROJECTILE_SPEED 15
-#define MAX_PROJECTILES  100
-
-#define DAMAGE_COOLDOWN  500
-#define ENEMY_DELAY      900
-#define MAX_ENEMIES      20
-//#define MAX_EXP          1 //DEBUG
-#define MAX_EXP          20
-#define CARDS_TO_CHOSE   3
-#define MAX_CARD_LEVEL   5
-//#define FIRTST_WAVE_TIME 3 //DEBUG
-#define FIRTST_WAVE_TIME 30
-
-#define SAVE_FILE "sdl.dat"
-
-enum characterState { IDLE, WALKING };
 enum gameState { TITLE_SCREEN, PLAYING, CARD_SELECTOR, GAME_OVER, PAUSE };
 
-class Entity {
-public:
-    int speed;
-    int life;
-    int frame;
-    Uint32 last_frame_time;
-    SDL_Rect rect_src, rect_dst, hitbox;
-    SDL_Texture* texture;
-
-    Entity()
-        : speed(0), life(0), frame(0), last_frame_time(0),
-        rect_src{ 0, 0, 0, 0 }, rect_dst{ 0, 0, 0, 0 }, hitbox{ 0, 0, 0, 0 },
-        texture(nullptr) {}
-
-    Entity(int spd, int lfe, int frm, int lftime, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex)
-        : speed(spd), life(lfe), frame(frm), last_frame_time(lftime), rect_src(src), rect_dst(dst), texture(tex) {
-        UpdateHitbox();
-    }
-
-    virtual void UpdateHitbox() {
-        hitbox = rect_dst;
-    }
-
-    //virtual ~Entity() {
-    //    SDL_DestroyTexture(texture);
-    //}
-
-    //void render(SDL_Renderer* renderer) {
-    //    SDL_RenderCopy(renderer, texture, &rect_src, &rect_dst);
-    //}
-};
-
-class Character : public Entity {
-public:
-    characterState current_state;
-    int exp, level, level_to_update, projectile_delay, last_damage_time, damage;
-    bool took_damage;
-
-    Character(int spd, int lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, characterState state, int prjctle_delay)
-        : Entity(spd, lfe, 0, 0, src, dst, tex), current_state(state), exp(0), level(0), 
-            projectile_delay(prjctle_delay), last_damage_time(0), took_damage(false), level_to_update(0), damage(1) {
-        UpdateHitbox();
-    }
-
-    void UpdateHitbox() override{
-        hitbox.w = rect_dst.w * 0.5;
-        hitbox.h = rect_dst.h * 0.9;
-
-        hitbox.x = rect_dst.x + (rect_dst.w - hitbox.w) / 2;
-        hitbox.y = rect_dst.y + (rect_dst.h - hitbox.h) / 2;
-    }
-  
-    void reset(SDL_Rect rect_dst_new) {
-        life            = 3;
-        damage          = 1;
-        frame           = 0;
-        exp             = 0;
-        level           = 1;        
-        speed           = 7;
-        rect_dst        = rect_dst_new;
-        last_frame_time = 0;
-        level_to_update = 0;
-        projectile_delay = PROJECTILE_DELAY;
-    }
-
-    void updateState(characterState newState) {
-        current_state = newState;
-    }
-};
-
-// Classe para inimigos (herda de Entity)
-class Enemy : public Entity {
-public:
-    bool is_active;
-
-    Enemy()
-        : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), is_active(false) {}
-
-    Enemy(int spd, int lfe, int frm, int lftime, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active)
-        : Entity(spd, lfe, frm, lftime, src, dst, tex), is_active(active) {
-        UpdateHitbox();
-    }
-
-    void UpdateHitbox() override {
-        hitbox.w = rect_dst.w * 0.4;
-        hitbox.h = rect_dst.h * 0.85;
-
-        hitbox.x = rect_dst.x + (rect_dst.w - hitbox.w) / 2 + 5;
-        hitbox.y = rect_dst.y + (rect_dst.h - hitbox.h) / 2 + 10;
-    }
-
-    void deactivate() {
-        is_active = false;
-    }
-};
-
-class Projectile : public Entity {
-public:
-    bool is_active;
-    float dir_x, dir_y;
-
-    Projectile()
-        : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), is_active(false), dir_x(0.0f), dir_y(0.0f) {}
-
-    Projectile(int spd, int lfe, int frm, int lftime, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active, float dx, float dy)
-        : Entity(spd, lfe, frm, lftime, src, dst, tex), is_active(active), dir_x(dx), dir_y(dy) {
-        //UpdateHitbox();
-    }
-
-    void UpdateHitbox() override {
-        hitbox.w = rect_dst.w;
-        hitbox.h = rect_dst.h;
-
-        hitbox.x = rect_dst.x;
-        hitbox.y = rect_dst.y;
-    }
-
-    void deactivate() {
-        is_active = false;
-    }
-};
-
-
-class Card : public Entity {
-public:
-    std::string name, description;
-    int level;
-
-    Card()
-        : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), name(""), description(""), level(0) {}
-
-    Card(SDL_Rect src, SDL_Rect dst, std::string nme, std::string dscrption, int lvl)
-        : Entity(0, 0, 0, 0, src, dst, nullptr), name(nme), description(dscrption), level(lvl){
-        //UpdateHitbox();
-    }
-};
-
-std::vector<Card> cards = {
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Fire Rate", "Shoot faster", 0},
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Heal", "Restore 1 health point.", 0},
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Speed", "Gain 1 speed point.", 0}, 
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Damage", "Gain 1 damage point.", 0},
-};
-
 std::vector<int> random_card_array(CARDS_TO_CHOSE);
-
-struct DynamicText {
-    SDL_Texture* texture;
-    SDL_Texture* shadow_texture;
-    SDL_Rect rect;
-    std::string current_text;
-
-    DynamicText() : texture(nullptr), shadow_texture(nullptr), rect{0,0,0,0}, current_text("") {}
-
-    void Update(SDL_Renderer* renderer, TTF_Font* font, const std::string& new_text, SDL_Color color, SDL_Color shadow_color) {
-        if (new_text != current_text) {
-            current_text = new_text;
-
-            if (texture) {
-                SDL_DestroyTexture(texture); // Limpa a textura antiga
-            }
-            if (shadow_texture) {
-                SDL_DestroyTexture(shadow_texture);
-            }
-
-            SDL_Surface* surface = TTF_RenderText_Solid(font, new_text.c_str(), color);
-            texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-            SDL_Surface* shadow_surface = TTF_RenderText_Solid(font, new_text.c_str(), shadow_color);
-            shadow_texture = SDL_CreateTextureFromSurface(renderer, shadow_surface);
-
-            rect.w = surface->w;
-            rect.h = surface->h;
-
-            SDL_FreeSurface(surface);
-            SDL_FreeSurface(shadow_surface);
-
-        }
-    }
-
-    void Render(SDL_Renderer* renderer, int x, int y, bool shadow) {
-
-        if (shadow && shadow_texture) {
-            SDL_Rect shadow_rect = { x + 2, y + 2, rect.w, rect.h };
-            SDL_RenderCopy(renderer, shadow_texture, nullptr, &shadow_rect);
-        }
-        
-        rect.x = x;
-        rect.y = y;
-        SDL_RenderCopy(renderer, texture, nullptr, &rect);
-    }
-
-    ~DynamicText() {
-        if (texture) SDL_DestroyTexture(texture);
-    }
-};
 
 SDL_Window* g_window = nullptr;
 SDL_Renderer* g_renderer = nullptr;
@@ -653,7 +436,7 @@ void NewWave(int &current_game_state, int &wave) {
 
 void UpdateRenderStopwatchWave(int &start_time, int &time_left ,int screen_width, int &elapsed_time, int &wave, int &current_game_state, TTF_Font* font, int total_pause_duration)
 {
-    int wave_time_legth = FIRTST_WAVE_TIME + ((wave - 1) * 5);
+    int wave_time_legth = FIRST_WAVE_TIME + ((wave - 1) * 5);
     elapsed_time = (SDL_GetTicks() - start_time - total_pause_duration) / 1000;
     if (current_game_state == PLAYING) time_left = wave_time_legth - elapsed_time;
     else time_left = wave_time_legth;
@@ -910,7 +693,7 @@ int main(int argc, char* argv[])
         { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG }, //rect_src
         { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER }, //rect_dst
         CreateTextureImg("Assets/batata_spritesheet.png"), //texture
-        IDLE, PROJECTILE_DELAY};
+        IDLE, CHARACTER_PROJECTILE_DELAY};
 
     SDL_Texture* projectile_texture = CreateTextureImg("Assets/mage-bullet-13x13.png");
     SDL_Texture* enemy_texture = CreateTextureImg("Assets/mage_spritesheet_85x94.png");
@@ -1060,8 +843,8 @@ int main(int argc, char* argv[])
             RenderProjectiles(camera);
             break;
         }
-        case CARD_SELECTOR:
-            if (character.level_to_update == 0 || skip) { 
+        case CARD_SELECTOR: {
+            if (character.level_to_update == 0 || skip) {
                 current_game_state = PLAYING;
                 total_pause_duration = 0;
                 character.rect_dst = { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER };
@@ -1073,7 +856,8 @@ int main(int argc, char* argv[])
                 for (int i = 0; i < MAX_PROJECTILES; i++) {
                     projectiles[i].deactivate();
                 }
-            }else{
+            }
+            else {
                 SDL_RenderCopy(g_renderer, bg_texture, &camera, nullptr);
                 RenderHeader(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, character, total_pause_duration);
                 RenderCardSelection(card_selected, small_font, screen_width, screen_height, character.level_to_update);
@@ -1087,7 +871,7 @@ int main(int argc, char* argv[])
                     key_pressed = true;
 
                     switch (event.key.keysym.scancode) {
-                    case SDL_SCANCODE_RETURN:                       
+                    case SDL_SCANCODE_RETURN:
 
                         //check if all cards are max level
                         skip = true;
@@ -1104,7 +888,7 @@ int main(int argc, char* argv[])
                             cards[random_card_array[card_selected]].level++;
                             character.level_to_update--;
                             randomizeCardArray();
-                        } 
+                        }
                         break;
 
                     case SDL_SCANCODE_A:
@@ -1129,6 +913,7 @@ int main(int argc, char* argv[])
             }
 
             break;
+        }
         case GAME_OVER: {
 
 

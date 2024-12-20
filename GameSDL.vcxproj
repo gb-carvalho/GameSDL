@@ -104,7 +104,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\GB\Desktop\Projetos\GameSDL\SDL2-2.30.8\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_image-2.8.2\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_ttf-2.20.2\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_mixer-2.8.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\GB\Desktop\Projetos\GameSDL\SDL2-2.30.8\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_image-2.8.2\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_ttf-2.20.2\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_mixer-2.8.0\include;C:\Users\GB\Desktop\Projetos\GameSDL\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -125,7 +125,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>C:\Users\GB\Desktop\Projetos\GameSDL\SDL2-2.30.8\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_image-2.8.2\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_ttf-2.20.2\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_mixer-2.8.0\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Users\GB\Desktop\Projetos\GameSDL\SDL2-2.30.8\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_image-2.8.2\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_ttf-2.20.2\include;C:\Users\GB\Desktop\Projetos\GameSDL\SDL2_mixer-2.8.0\include;C:\Users\GB\Desktop\Projetos\GameSDL\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -141,10 +141,24 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="GameSDL.cpp" />
+    <ResourceCompile Include="resources.rc" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="resources.rc" />
+    <ClCompile Include="src\card.cpp" />
+    <ClCompile Include="src\character.cpp" />
+    <ClCompile Include="src\dynamic_text.cpp" />
+    <ClCompile Include="src\enemy.cpp" />
+    <ClCompile Include="src\entity.cpp" />
+    <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\projectile.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="include\card.hpp" />
+    <ClInclude Include="include\dynamic_text.hpp" />
+    <ClInclude Include="include\enemy.hpp" />
+    <ClInclude Include="include\entity.hpp" />
+    <ClInclude Include="include\character.hpp" />
+    <ClInclude Include="include\projectile.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
