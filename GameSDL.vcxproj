@@ -146,9 +146,12 @@
   <ItemGroup>
     <ClCompile Include="src\card.cpp" />
     <ClCompile Include="src\character.cpp" />
+    <ClCompile Include="src\collision.cpp" />
     <ClCompile Include="src\dynamic_text.cpp" />
     <ClCompile Include="src\enemy.cpp" />
     <ClCompile Include="src\entity.cpp" />
+    <ClCompile Include="src\game_utils.cpp" />
+    <ClCompile Include="src\init.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\projectile.cpp" />
   </ItemGroup>
@@ -158,6 +161,9 @@
     <ClInclude Include="include\enemy.hpp" />
     <ClInclude Include="include\entity.hpp" />
     <ClInclude Include="include\character.hpp" />
+    <ClInclude Include="include\collision.hpp" />
+    <ClInclude Include="include\game_utils.hpp" />
+    <ClInclude Include="include\init.hpp" />
     <ClInclude Include="include\projectile.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

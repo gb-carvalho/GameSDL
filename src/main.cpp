@@ -14,6 +14,9 @@
 #include "card.hpp"
 #include "projectile.hpp"
 #include "dynamic_text.hpp"
+#include "init.hpp"
+#include "collision.hpp"
+#include "game_utils.hpp"
 
 #define ANIMATION_SPEED        160 //Isso deveria ter valor diferente por entidade talvez
 #define FIRST_WAVE_TIME        30
@@ -26,7 +29,6 @@ std::vector<int> random_card_array(CARDS_TO_CHOSE);
 SDL_Window* g_window = nullptr;
 SDL_Renderer* g_renderer = nullptr;
 
-Projectile projectiles[MAX_PROJECTILES];
 Uint32 last_projectile_time = 0;
 
 Enemy enemies[MAX_ENEMIES];
@@ -39,84 +41,6 @@ DynamicText title_text;
 DynamicText pause_text;
 DynamicText kill_count_text;
 DynamicText stopwatch_text;
-
-
-bool Init() 
-{
-    // Inicializa o SDL
-    if (SDL_Init(SDL_INIT_VIDEO) < 0) {
-        SDL_Log("Erro ao init SDL: %s", SDL_GetError());
-        return false;
-    }
-    return true;
-}
-
-void InitWindow(int screen_width, int screen_height) 
-{
-    // Cria a janela
-    g_window = SDL_CreateWindow("Hello SDL World",
-        SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
-        screen_width, screen_height, SDL_WINDOW_SHOWN);
-    if (!g_window) {
-        SDL_Log("Error ao creating window: %s", SDL_GetError());
-        SDL_Quit();
-    }
-}
-
-void InitRenderer() 
-{
-    // Cria o renderizador
-    g_renderer = SDL_CreateRenderer(g_window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
-    if (!g_renderer) {
-        SDL_Log("Error creating render: %s", SDL_GetError());
-        SDL_DestroyWindow(g_window);
-        SDL_Quit();
-    }
-
-    if (SDL_SetRenderDrawBlendMode(g_renderer, SDL_BLENDMODE_BLEND) != 0) {
-        SDL_Log("Erro ao configurar modo de blending: %s", SDL_GetError());
-    }
-}
-
-void InitSDLMusic()
-{
-    if (SDL_Init(SDL_INIT_AUDIO) < 0) {
-        SDL_Log("Erro ao inicializar o SDL: %s", SDL_GetError());
-        SDL_Quit();
-    }
-
-    if (Mix_OpenAudio(44100, MIX_DEFAULT_FORMAT, 2, 2048) < 0) {
-        SDL_Log("Erro ao inicializar SDL_mixer : %s", Mix_GetError());
-        SDL_Quit();
-    }
-}
-
-Mix_Chunk* InitSoundEffect(const char* sound_path)
-{
-    Mix_Chunk* sound = Mix_LoadWAV(sound_path);
-    if (!sound) {
-        SDL_Log("Erro ao carregar som: %s", Mix_GetError());
-        return nullptr;
-    }
-
-    Mix_VolumeChunk(sound, MIX_MAX_VOLUME / 30);
-    return sound;
-}
-
-Mix_Music* InitMusic(const char* music_path, int loops)
-{
-    Mix_Music* music = Mix_LoadMUS(music_path);
-    if (!music) {
-        SDL_Log("Erro ao carregar música: %s", Mix_GetError());
-        Mix_CloseAudio();
-        SDL_Quit();
-        return nullptr;
-    }
-    Mix_VolumeMusic(MIX_MAX_VOLUME / 30);
-    Mix_PlayMusic(music, loops);
-
-    return music;
-}
 
 SDL_Texture* CreateTextureImg(const char* image_path) 
 {
@@ -160,28 +84,6 @@ SDL_Texture* UpdateTextTexture(TTF_Font* font, SDL_Rect& dest_rect_life_text, st
     return life_text_texture;
 }
 
-bool CheckCollision(SDL_Rect a, SDL_Rect b, SDL_Rect camera) 
-{
-    bool collision =
-        a.x + a.w >= b.x &&
-        b.x + b.w >= a.x &&
-        a.y + a.h >= b.y &&
-        b.y + b.h >= a.y;
-
-    SDL_Rect adjusted_a = {
-        a.x - camera.x, a.y - camera.y, a.w, a.h
-    };
-    SDL_Rect adjusted_b = {
-        b.x - camera.x, b.y - camera.y, b.w, b.h
-    };
-
-    //DEBUG//
-    //SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255); // Vermelho
-    //SDL_RenderDrawRect(g_renderer, &adjusted_a);
-    //SDL_RenderDrawRect(g_renderer, &adjusted_b);
-
-    return collision;
-}
 
 void UpdateCamera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect character_rect_dst, int bg_width, int bg_height, int screen_width, int screen_height) 
 {
@@ -331,32 +233,6 @@ void UpdateProjectiles(int width_limit, int height_limit)
     }
 }
 
-void LevelUp(Character& character, int& current_game_state, TTF_Font* font) {
-    character.exp = 0;
-    character.level_to_update++;
-    character.level++;
-    level_text.Update(g_renderer, font, "Level: " + std::to_string(character.level), { 255, 255, 255 }, { 0, 0, 0 });
-}
-
-void CheckProjectileCollisionWithEnemy(Character &character, SDL_Rect enemy_rect, int &enemy_life, bool &active, SDL_Rect camera, int &kill_count, 
-                                        TTF_Font* font, int &current_game_state)
-{
-    for (int i = 0; i < MAX_PROJECTILES; i++) {
-        if (projectiles[i].is_active && CheckCollision(projectiles[i].hitbox, enemy_rect, camera)) {
-            projectiles[i].deactivate();
-            enemy_life -= character.damage;
-            if (enemy_life <= 0) {
-                kill_count++;
-                kill_count_text.Update(g_renderer, font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 }, { 0, 0, 0 });
-                character.exp++;
-                if (character.exp >= MAX_EXP) {
-                    LevelUp(character, current_game_state, font);
-                }
-                active = 0;
-            }
-        }
-    }
-}
 
 void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave) 
 {
@@ -376,40 +252,6 @@ void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture, int w
         }
     }
 }
-
-void resolveCollision(SDL_Rect* a, SDL_Rect* b) 
-{
-    float dx = (a->x + a->w / 2) - (b->x + b->w / 2);
-    float dy = (a->y + a->h / 2) - (b->y + b->h / 2);
-
-    float half_sum_x = (a->w / 2) + (b->w / 2);
-    float half_sum_y = (a->h / 2) + (b->h / 2);
-
-    float overlap_x = half_sum_x - fabs(dx);
-    float overlap_y = half_sum_y - fabs(dy);
-
-    if (overlap_x > 0 && overlap_y > 0) {
-    
-        if (overlap_x < overlap_y) {
-            // Resolve along the X-axis
-            if (dx > 0) {
-                b->x -= overlap_x/5;
-            }
-            else {
-                b->x += overlap_x/5;
-            }
-        }
-        else {
-            // Resolve along the Y-axis
-            if (dy > 0) {
-                b->y -= overlap_y/5;
-            }
-            else {
-                b->y += overlap_y/5;
-            }
-        }
-    }
-};
 
 std::string TimeFormatted(int time_in_seconds){
     int minutes = time_in_seconds / 60;
@@ -675,8 +517,8 @@ int main(int argc, char* argv[])
     }
     else SDL_Log("Error getting monitor resolution: %s", SDL_GetError());
 
-    InitWindow(screen_width, screen_height);
-    InitRenderer();
+    InitWindow(screen_width, screen_height, &g_window);
+    InitRenderer(&g_window, &g_renderer);
 
     InitSDLMusic();
     Mix_Music* music = InitMusic("Assets/music.mp3", -1);
@@ -823,7 +665,8 @@ int main(int argc, char* argv[])
                         }
                     }
 
-                    CheckProjectileCollisionWithEnemy(character, enemies[i].hitbox, enemies[i].life, enemies[i].is_active, camera, kill_count, small_font, current_game_state);
+                    CheckProjectileCollisionWithEnemy(g_renderer, character, enemies[i].hitbox, enemies[i].life, enemies[i].is_active, camera, kill_count, 
+                        small_font, current_game_state, &kill_count_text, &level_text);
                     for (int j = i + 1; j < MAX_ENEMIES; j++) {
                         if (!enemies[j].is_active || resolved_collision[i][j]) continue;
                         resolveCollision(&enemies[i].rect_dst, &enemies[j].rect_dst);

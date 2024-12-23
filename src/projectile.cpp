@@ -1,5 +1,8 @@
 #include "projectile.hpp"
 
+
+Projectile projectiles[MAX_PROJECTILES];
+
 Projectile::Projectile()
     : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), is_active(false), dir_x(0.0f), dir_y(0.0f) {}
 

@@ -17,3 +17,5 @@ public:
     void UpdateHitbox() override;
     void deactivate();
 };
+
+extern Projectile projectiles[MAX_PROJECTILES];

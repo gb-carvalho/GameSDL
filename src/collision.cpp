@@ -1,0 +1,78 @@
+#include "collision.hpp"
+
+bool CheckCollision(SDL_Rect a, SDL_Rect b, SDL_Rect camera)
+{
+    bool collision =
+        a.x + a.w >= b.x &&
+        b.x + b.w >= a.x &&
+        a.y + a.h >= b.y &&
+        b.y + b.h >= a.y;
+
+    SDL_Rect adjusted_a = {
+        a.x - camera.x, a.y - camera.y, a.w, a.h
+    };
+    SDL_Rect adjusted_b = {
+        b.x - camera.x, b.y - camera.y, b.w, b.h
+    };
+
+    //DEBUG//
+    //SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255); // Vermelho
+    //SDL_RenderDrawRect(g_renderer, &adjusted_a);
+    //SDL_RenderDrawRect(g_renderer, &adjusted_b);
+
+    return collision;
+}
+
+void CheckProjectileCollisionWithEnemy(SDL_Renderer* g_renderer, Character& character, SDL_Rect enemy_rect, int& enemy_life, bool& active, SDL_Rect camera, int& kill_count,
+    TTF_Font* font, int& current_game_state, DynamicText *kill_count_text, DynamicText *level_text)
+{
+    for (int i = 0; i < MAX_PROJECTILES; i++) {
+        if (projectiles[i].is_active && CheckCollision(projectiles[i].hitbox, enemy_rect, camera)) {
+            projectiles[i].deactivate();
+            enemy_life -= character.damage;
+            if (enemy_life <= 0) {
+                kill_count++;
+                kill_count_text->Update(g_renderer, font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 }, { 0, 0, 0 });
+                character.exp++;
+                if (character.exp >= MAX_EXP) {
+                    LevelUp(g_renderer, character, current_game_state, font, level_text);
+                }
+                active = 0;
+            }
+        }
+    }
+}
+
+void resolveCollision(SDL_Rect* a, SDL_Rect* b)
+{
+    float dx = (a->x + a->w / 2) - (b->x + b->w / 2);
+    float dy = (a->y + a->h / 2) - (b->y + b->h / 2);
+
+    float half_sum_x = (a->w / 2) + (b->w / 2);
+    float half_sum_y = (a->h / 2) + (b->h / 2);
+
+    float overlap_x = half_sum_x - fabs(dx);
+    float overlap_y = half_sum_y - fabs(dy);
+
+    if (overlap_x > 0 && overlap_y > 0) {
+
+        if (overlap_x < overlap_y) {
+            // Resolve along the X-axis
+            if (dx > 0) {
+                b->x -= overlap_x / 5;
+            }
+            else {
+                b->x += overlap_x / 5;
+            }
+        }
+        else {
+            // Resolve along the Y-axis
+            if (dy > 0) {
+                b->y -= overlap_y / 5;
+            }
+            else {
+                b->y += overlap_y / 5;
+            }
+        }
+    }
+};
