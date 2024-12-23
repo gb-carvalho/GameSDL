@@ -49,10 +49,10 @@ void UpdateAnimation(characterState current_state, SDL_Rect& src_rect, int& fram
 
 float CalculateMagnitude(SDL_Rect a, SDL_Rect b)
 {
-    float a_center_x = a.x + a.w / 2;
-    float a_center_y = a.y + a.h / 2;
-    float b_center_x = b.x + b.w / 2;
-    float b_center_y = b.y + b.h / 2;
+    float a_center_x = static_cast<float>(a.x + a.w / 2);
+    float a_center_y = static_cast<float>(a.y + a.h / 2);
+    float b_center_x = static_cast<float>(b.x + b.w / 2);
+    float b_center_y = static_cast<float>(b.y + b.h / 2);
 
     float diff_x = static_cast<float>(a_center_x - b_center_x);
     float diff_y = static_cast<float>(a_center_y - b_center_y);
@@ -64,10 +64,10 @@ float CalculateMagnitude(SDL_Rect a, SDL_Rect b)
 
 void CalculateDirection(SDL_Rect a, SDL_Rect b, Projectile* projectile)
 {
-    float a_center_x = a.x + a.w / 2;
-    float a_center_y = a.y + a.h / 2;
-    float b_center_x = b.x + b.w / 2;
-    float b_center_y = b.y + b.h / 2;
+    float a_center_x = static_cast<float>(a.x + a.w / 2);
+    float a_center_y = static_cast<float>(a.y + a.h / 2);
+    float b_center_x = static_cast<float>(b.x + b.w / 2);
+    float b_center_y = static_cast<float>(b.y + b.h / 2);
 
     float diff_x = b_center_x - a_center_x;
     float diff_y = b_center_y - a_center_y;
@@ -289,8 +289,11 @@ void MoveCharacter(Character* character, const Uint8* keyState, int bg_width, in
         dy = (dy / magnitude) * character->speed;
     }
 
-    character->rect_dst.x += dx;
-    character->rect_dst.y += dy;
+    character->pos_x += dx;
+    character->pos_y += dy;
+
+    character->rect_dst.x = static_cast<int>(character->pos_x);
+    character->rect_dst.y = static_cast<int>(character->pos_y);
 
     if (dx != 0 || dy != 0) {
         character->current_state = WALKING;

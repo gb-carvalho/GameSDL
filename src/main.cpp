@@ -213,6 +213,8 @@ int main(int argc, char* argv[])
                 current_game_state = PLAYING;
                 total_pause_duration = 0;
                 character.rect_dst = { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER };
+                character.pos_x = character.rect_dst.x;
+                character.pos_y = character.rect_dst.y;
                 start_time = SDL_GetTicks();
 
                 for (int i = 0; i < MAX_ENEMIES; i++) {

@@ -118,7 +118,7 @@ void RenderHeader(int& start_time, int& time_left, int screen_width, int& elapse
 {
     UpdateRenderStopwatchWave(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, total_pause_duration, stopwatch_text);
     life_text->Render(g_renderer, 50, 20, true);
-    kill_count_text->Render(g_renderer, screen_width / 1.3 - (kill_count_text->rect.w), 20, true);
+    kill_count_text->Render(g_renderer, static_cast<int>(screen_width / 1.3 - (kill_count_text->rect.w)), 20, true);
     level_text->Render(g_renderer, screen_width - 30 - (level_text->rect.w), 20, true);
     RenderExpBar(screen_width, character.exp);
 }

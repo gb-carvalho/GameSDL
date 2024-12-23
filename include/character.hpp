@@ -18,6 +18,7 @@ class Character : public Entity {
 public:
     characterState current_state;
     int exp, level, level_to_update, projectile_delay, last_damage_time, damage;
+    float pos_y, pos_x;
     bool took_damage;
 
     Character(int spd, int lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, characterState state, int prjctle_delay);
