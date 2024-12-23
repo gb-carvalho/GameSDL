@@ -10,9 +10,9 @@
 #include "dynamic_text.hpp"
 #include "character.hpp"
 
-bool CheckCollision(SDL_Rect a, SDL_Rect b, SDL_Rect camera);
+extern bool resolved_collision[MAX_ENEMIES][MAX_ENEMIES];
 
+bool CheckCollision(SDL_Rect a, SDL_Rect b, SDL_Rect camera);
 void CheckProjectileCollisionWithEnemy(SDL_Renderer* g_renderer, Character& character, SDL_Rect enemy_rect, int& enemy_life, bool& active, SDL_Rect camera, int& kill_count,
                                        TTF_Font* font, int& current_game_state, DynamicText *kill_count_text, DynamicText *level_text);
-
 void resolveCollision(SDL_Rect* a, SDL_Rect* b);

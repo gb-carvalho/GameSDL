@@ -1,5 +1,7 @@
 #include "collision.hpp"
 
+bool resolved_collision[MAX_ENEMIES][MAX_ENEMIES] = { false };
+
 bool CheckCollision(SDL_Rect a, SDL_Rect b, SDL_Rect camera)
 {
     bool collision =

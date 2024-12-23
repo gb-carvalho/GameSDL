@@ -154,6 +154,7 @@
     <ClCompile Include="src\init.cpp" />
     <ClCompile Include="src\main.cpp" />
     <ClCompile Include="src\projectile.cpp" />
+    <ClCompile Include="src\render.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\card.hpp" />
@@ -165,6 +166,7 @@
     <ClInclude Include="include\game_utils.hpp" />
     <ClInclude Include="include\init.hpp" />
     <ClInclude Include="include\projectile.hpp" />
+    <ClInclude Include="include\render.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
