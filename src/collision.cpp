@@ -18,9 +18,9 @@ bool CheckCollision(SDL_Rect a, SDL_Rect b, SDL_Rect camera)
     };
 
     //DEBUG//
-    //SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255); // Vermelho
-    //SDL_RenderDrawRect(g_renderer, &adjusted_a);
-    //SDL_RenderDrawRect(g_renderer, &adjusted_b);
+    SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255); // Vermelho
+    SDL_RenderDrawRect(g_renderer, &adjusted_a);
+    SDL_RenderDrawRect(g_renderer, &adjusted_b);
 
     return collision;
 }
@@ -47,11 +47,11 @@ void CheckProjectileCollisionWithEnemy(SDL_Renderer* g_renderer, Character& char
 
 void resolveCollision(SDL_Rect* a, SDL_Rect* b)
 {
-    float dx = (a->x + a->w / 2) - (b->x + b->w / 2);
-    float dy = (a->y + a->h / 2) - (b->y + b->h / 2);
+    float dx = static_cast<float>((a->x + a->w / 2) - (b->x + b->w / 2));
+    float dy = static_cast<float>((a->y + a->h / 2) - (b->y + b->h / 2));
 
-    float half_sum_x = (a->w / 2) + (b->w / 2);
-    float half_sum_y = (a->h / 2) + (b->h / 2);
+    float half_sum_x = static_cast<float>((a->w / 2) + (b->w / 2));
+    float half_sum_y = static_cast<float>((a->h / 2) + (b->h / 2));
 
     float overlap_x = half_sum_x - fabs(dx);
     float overlap_y = half_sum_y - fabs(dy);
@@ -61,19 +61,19 @@ void resolveCollision(SDL_Rect* a, SDL_Rect* b)
         if (overlap_x < overlap_y) {
             // Resolve along the X-axis
             if (dx > 0) {
-                b->x -= overlap_x / 5;
+                b->x -= static_cast<int>(overlap_x / 5);
             }
             else {
-                b->x += overlap_x / 5;
+                b->x += static_cast<int>(overlap_x / 5);
             }
         }
         else {
             // Resolve along the Y-axis
             if (dy > 0) {
-                b->y -= overlap_y / 5;
+                b->y -= static_cast<int>(overlap_y / 5);
             }
             else {
-                b->y += overlap_y / 5;
+                b->y += static_cast<int>(overlap_y / 5);
             }
         }
     }

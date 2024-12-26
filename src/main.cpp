@@ -160,6 +160,9 @@ int main(int argc, char* argv[])
             SDL_RenderCopy(g_renderer, character.texture, &character.rect_src, &player_render_rect);
 
             SpawnEnemies(bg_width, bg_height, enemy_texture, wave);
+            FireProjectile(character.rect_dst, projectile_texture, character.projectile_delay);
+            UpdateProjectiles(bg_width, bg_height);
+
             for (int i = 0; i < MAX_ENEMIES; i++) {
                 if (enemies[i].is_active) {
                     UpdateEnemyPosition(&enemies[i].rect_dst, character.rect_dst, enemies[i].speed);
@@ -203,8 +206,6 @@ int main(int argc, char* argv[])
 
             memset(resolved_collision, 0, sizeof(resolved_collision));
 
-            FireProjectile(character.rect_dst, projectile_texture, character.projectile_delay);
-            UpdateProjectiles(bg_width, bg_height);
             RenderProjectiles(camera);
             break;
         }
@@ -213,8 +214,8 @@ int main(int argc, char* argv[])
                 current_game_state = PLAYING;
                 total_pause_duration = 0;
                 character.rect_dst = { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER };
-                character.pos_x = character.rect_dst.x;
-                character.pos_y = character.rect_dst.y;
+                character.pos_x = static_cast<float>(character.rect_dst.x);
+                character.pos_y = static_cast<float>(character.rect_dst.y);
                 start_time = SDL_GetTicks();
 
                 for (int i = 0; i < MAX_ENEMIES; i++) {
@@ -293,15 +294,15 @@ int main(int argc, char* argv[])
             SDL_RenderFillRect(g_renderer, &dark_rect_dst);
 
             title_text.Update(g_renderer, font, "You died", { 238, 173, 45 }, { 0, 0, 0 });
-            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2, true);
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, static_cast<int>(screen_height / 1.5 - title_text.rect.h / 2), true);
             title_text.Update(g_renderer, small_font, "Press Enter to restart", { 255, 255, 255 }, { 0, 0, 0 });
-            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2 + 90, true);
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, static_cast<int>(screen_height / 1.5 - title_text.rect.h / 2 + 90), true);
             title_text.Update(g_renderer, small_font, "Press ESC to go to the title screen.", { 255, 255, 255 }, { 0, 0, 0 });
-            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2 + 120, true);
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, static_cast<int>(screen_height / 1.5 - title_text.rect.h / 2 + 120), true);
 
             if (kill_count > kill_count_save_file || elapsed_time > elapsed_time_save_file) {
                 title_text.Update(g_renderer, small_font, "Congratulations! You've set a new record!", { 255, 50, 50 }, { 0, 0, 0 });
-                title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 1.5 - title_text.rect.h / 2 + 150, true);
+                title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, static_cast<int>(screen_height / 1.5 - title_text.rect.h / 2 + 150), true);
             }
 
             SaveGame(SAVE_FILE, kill_count, wave);

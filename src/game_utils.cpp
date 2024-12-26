@@ -122,8 +122,8 @@ void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture, int p
 void UpdateProjectiles(int width_limit, int height_limit)
 {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
-        projectiles[i].rect_dst.x += projectiles[i].dir_x * PROJECTILE_SPEED;
-        projectiles[i].rect_dst.y += projectiles[i].dir_y * PROJECTILE_SPEED;
+        projectiles[i].rect_dst.x += static_cast<int>(projectiles[i].dir_x * PROJECTILE_SPEED);
+        projectiles[i].rect_dst.y += static_cast<int>(projectiles[i].dir_y * PROJECTILE_SPEED);
         projectiles[i].UpdateHitbox();
         if (projectiles[i].rect_dst.x < 0 || projectiles[i].rect_dst.x > width_limit ||
             projectiles[i].rect_dst.y < 0 || projectiles[i].rect_dst.y > height_limit) {
@@ -242,13 +242,13 @@ void ResetGame(int& kill_count, int& wave, Character* character, int bg_width, i
 
 void SelectCard(std::string card_name, Character& character, TTF_Font* font, DynamicText* life_text)
 {
-    if (card_name == "Fire Rate") character.projectile_delay = character.projectile_delay * 0.90;
+    if (card_name == "Fire Rate") character.projectile_delay = static_cast<int>(character.projectile_delay * 0.90);
     if (card_name == "Heal") { character.life++; life_text->Update(g_renderer, font, "Lifes: " + std::to_string(character.life), { 255, 255, 255 }, { 0, 0, 0 }); }
     if (card_name == "Speed") character.speed++;
     if (card_name == "Damage") character.damage++;
 }
 
-void DamageColor(SDL_Texture* texture, int last_damage_time, bool& took_damage)
+void DamageColor(SDL_Texture* texture, Uint32 last_damage_time, bool& took_damage)
 {
     if (took_damage) {
         SDL_SetTextureColorMod(texture, 255, 0, 0);

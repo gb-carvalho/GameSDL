@@ -38,7 +38,7 @@ void ResetGame(int& kill_count, int& wave, Character* character, int bg_width, i
 void SelectCard(std::string card_name, Character& character, TTF_Font* font, DynamicText* life_text);
 void randomizeCardArray();
 void NewWave(int& current_game_state, int& wave);
-void DamageColor(SDL_Texture* texture, int last_damage_time, bool& took_damage);
+void DamageColor(SDL_Texture* texture, Uint32 last_damage_time, bool& took_damage);
 void MoveCharacter(Character* character, const Uint8* keyState, int bg_width, int bg_height);
 void LoadGame(const std::string& file_name, int& kill_count, int& wave);
 void SaveGame(const std::string& file_name, int kill_count, int wave);

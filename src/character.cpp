@@ -7,8 +7,8 @@ Character::Character(int spd, int lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* 
 }
 
 void Character::UpdateHitbox(){
-    hitbox.w = rect_dst.w * 0.5;
-    hitbox.h = rect_dst.h * 0.9;
+    hitbox.w = static_cast<int>(rect_dst.w * 0.5);
+    hitbox.h = static_cast<int>(rect_dst.h * 0.9);
 
     hitbox.x = rect_dst.x + (rect_dst.w - hitbox.w) / 2;
     hitbox.y = rect_dst.y + (rect_dst.h - hitbox.h) / 2;
@@ -22,8 +22,8 @@ void Character::reset(SDL_Rect rect_dst_new) {
     level = 1;
     speed = 7;
     rect_dst = rect_dst_new;
-    pos_x = rect_dst_new.x;
-    pos_y = rect_dst_new.y;
+    pos_x = static_cast<float>(rect_dst_new.x);
+    pos_y = static_cast<float>(rect_dst_new.y);
     last_frame_time = 0;
     level_to_update = 0;
     projectile_delay = CHARACTER_PROJECTILE_DELAY;

@@ -17,7 +17,8 @@ enum characterState { IDLE, WALKING };
 class Character : public Entity {
 public:
     characterState current_state;
-    int exp, level, level_to_update, projectile_delay, last_damage_time, damage;
+    Uint32 last_damage_time;
+    int exp, level, level_to_update, projectile_delay, damage;
     float pos_y, pos_x;
     bool took_damage;
 
