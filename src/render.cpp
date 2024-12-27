@@ -33,13 +33,13 @@ void UpdateRenderStopwatchWave(int& start_time, int& time_left, int screen_width
     stopwatch_text->Render(g_renderer, screen_width / 2 - stopwatch_text->rect.w / 2, 50, true);
 }
 
-void RenderExpBar(int screen_width, int exp)
+void RenderExpBar(int screen_width, float exp)
 {
     SDL_Rect exp_bar_rect = { 8, 8, screen_width - 20, 10 };
     SDL_SetRenderDrawColor(g_renderer, 230, 230, 230, 255);
     SDL_RenderDrawRect(g_renderer, &exp_bar_rect);
 
-    int filled = (exp * (screen_width - 22)) / MAX_EXP;
+    int filled = static_cast<int>((exp * (screen_width - 22)) / MAX_EXP);
 
     SDL_Rect filled_rect = { 9, 9, filled, 8 };
     SDL_SetRenderDrawColor(g_renderer, 0, 255, 0, 255);

@@ -3,8 +3,10 @@
 std::vector<Card> cards = {
     { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Fire Rate", "Shoot faster", 0},
     { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Heal", "Restore 1 health point.", 0},
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Speed", "Gain 1 speed point.", 0},
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Damage", "Gain 1 damage point.", 0},
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Speed", "Increases speed.", 0},
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Damage", "Inceases damage.", 0},
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Projectile Speed", "Increases projectile speed", 0},
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "EXP", "Increases EXP gain.", 0},
 };
 
 Card::Card()

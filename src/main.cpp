@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
     bool running = true;
     int current_game_state = TITLE_SCREEN;
     int kill_count, start_time, elapsed_time, wave, time_left, pause_start_time = 0, total_pause_duration = 0;
-    bool key_pressed = false, skip = false;
+    bool key_pressed = false, skip = false, allLevelsAreFive;
     DynamicText life_text, level_text, title_text, pause_text, kill_count_text, stopwatch_text;
 
     while (running) {
@@ -161,7 +161,7 @@ int main(int argc, char* argv[])
 
             SpawnEnemies(bg_width, bg_height, enemy_texture, wave);
             FireProjectile(character.rect_dst, projectile_texture, character.projectile_delay);
-            UpdateProjectiles(bg_width, bg_height);
+            UpdateProjectiles(bg_width, bg_height, character.projectile_speed_multiplier);
 
             for (int i = 0; i < MAX_ENEMIES; i++) {
                 if (enemies[i].is_active) {
@@ -202,7 +202,7 @@ int main(int argc, char* argv[])
 
             RenderHeader(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, character, total_pause_duration,
                          &stopwatch_text, &life_text, &kill_count_text, &level_text);
-            if (time_left <= 0) NewWave(current_game_state, wave);         
+            if (time_left <= 0) NewWave(current_game_state, wave, skip);         
 
             memset(resolved_collision, 0, sizeof(resolved_collision));
 
@@ -242,14 +242,19 @@ int main(int argc, char* argv[])
                     switch (event.key.keysym.scancode) {
                     case SDL_SCANCODE_RETURN:
 
-                        //check if all cards are max level
-                        skip = true;
-                        for (int i = 0; i < cards.size(); i++) {
-                            if (cards[i].level < 5) {
-                                skip = false;
+                        allLevelsAreFive = true;
+                        for (int i = 0; i < random_card_array.size(); ++i) {
+                            if (cards[random_card_array[i]].level != 5) {
+                                allLevelsAreFive = false;
                                 break;
                             }
                         }
+
+                        if (allLevelsAreFive) {
+                            skip = true;
+                            break;
+                        }
+
                         if (skip) current_game_state = PLAYING;
 
                         if (cards[random_card_array[card_selected]].level < 5) {
@@ -286,8 +291,8 @@ int main(int argc, char* argv[])
         case GAME_OVER: {
 
 
-            int kill_count_save_file, elapsed_time_save_file;
-            LoadGame("sdl.dat", kill_count_save_file, elapsed_time_save_file);
+            int kill_count_save_file, wave_save_file;
+            LoadGame("sdl.dat", kill_count_save_file, wave_save_file);
 
             SDL_Rect dark_rect_dst = { 0, 0, screen_width, screen_height };
             SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 2);
@@ -300,7 +305,7 @@ int main(int argc, char* argv[])
             title_text.Update(g_renderer, small_font, "Press ESC to go to the title screen.", { 255, 255, 255 }, { 0, 0, 0 });
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, static_cast<int>(screen_height / 1.5 - title_text.rect.h / 2 + 120), true);
 
-            if (kill_count > kill_count_save_file || elapsed_time > elapsed_time_save_file) {
+            if (kill_count > kill_count_save_file || wave > wave_save_file) {
                 title_text.Update(g_renderer, small_font, "Congratulations! You've set a new record!", { 255, 50, 50 }, { 0, 0, 0 });
                 title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, static_cast<int>(screen_height / 1.5 - title_text.rect.h / 2 + 150), true);
             }

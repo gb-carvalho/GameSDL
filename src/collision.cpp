@@ -18,9 +18,9 @@ bool CheckCollision(SDL_Rect a, SDL_Rect b, SDL_Rect camera)
     };
 
     //DEBUG//
-    SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255); // Vermelho
-    SDL_RenderDrawRect(g_renderer, &adjusted_a);
-    SDL_RenderDrawRect(g_renderer, &adjusted_b);
+    //SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255); // Vermelho
+    //SDL_RenderDrawRect(g_renderer, &adjusted_a);
+    //SDL_RenderDrawRect(g_renderer, &adjusted_b);
 
     return collision;
 }
@@ -35,7 +35,7 @@ void CheckProjectileCollisionWithEnemy(SDL_Renderer* g_renderer, Character& char
             if (enemy_life <= 0) {
                 kill_count++;
                 kill_count_text->Update(g_renderer, font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 }, { 0, 0, 0 });
-                character.exp++;
+                character.exp += 1 * character.exp_multiplier;
                 if (character.exp >= MAX_EXP) {
                     LevelUp(g_renderer, character, current_game_state, font, level_text);
                 }

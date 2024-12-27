@@ -29,7 +29,7 @@ void UpdateAnimation(characterState current_state, SDL_Rect& src_rect, int& fram
 float CalculateMagnitude(SDL_Rect a, SDL_Rect b);
 void CalculateDirection(SDL_Rect a, SDL_Rect b, Projectile* projectile);
 void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture, int projectile_delay);
-void UpdateProjectiles(int width_limit, int height_limit);
+void UpdateProjectiles(int width_limit, int height_limit, float multiplier);
 void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave);
 std::string TimeFormatted(int time_in_seconds);
 void ResetGame(int& kill_count, int& wave, Character* character, int bg_width, int bg_height, int& start_time, 
@@ -37,7 +37,7 @@ void ResetGame(int& kill_count, int& wave, Character* character, int bg_width, i
                DynamicText* stopwatch_text, DynamicText* life_text, DynamicText* kill_count_text, DynamicText* level_text);
 void SelectCard(std::string card_name, Character& character, TTF_Font* font, DynamicText* life_text);
 void randomizeCardArray();
-void NewWave(int& current_game_state, int& wave);
+void NewWave(int& current_game_state, int& wave, bool& skip);
 void DamageColor(SDL_Texture* texture, Uint32 last_damage_time, bool& took_damage);
 void MoveCharacter(Character* character, const Uint8* keyState, int bg_width, int bg_height);
 void LoadGame(const std::string& file_name, int& kill_count, int& wave);

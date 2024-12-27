@@ -2,7 +2,8 @@
 
 Character::Character(int spd, int lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, characterState state, int prjctle_delay)
     : Entity(spd, lfe, 0, 0, src, dst, tex), current_state(state), exp(0), level(0), projectile_delay(prjctle_delay), 
-    last_damage_time(0), took_damage(false), level_to_update(0), damage(1), pos_x(static_cast<float>(dst.x)), pos_y(static_cast<float>(dst.y)) {
+    last_damage_time(0), took_damage(false), level_to_update(0), damage(1), pos_x(static_cast<float>(dst.x)), pos_y(static_cast<float>(dst.y)),
+    projectile_speed_multiplier(1), exp_multiplier(1){
     UpdateHitbox();
 }
 
@@ -27,6 +28,8 @@ void Character::reset(SDL_Rect rect_dst_new) {
     last_frame_time = 0;
     level_to_update = 0;
     projectile_delay = CHARACTER_PROJECTILE_DELAY;
+    projectile_speed_multiplier = 1;
+    exp_multiplier = 1;
 }
 
 void Character::updateState(characterState newState) {
