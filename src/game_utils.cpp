@@ -29,6 +29,45 @@ void UpdateEnemyPosition(SDL_Rect* enemy_rect_dst, SDL_Rect player_rect, int ene
     }
 }
 
+void UpdateAnimationCharacter(Character* character, int width, int height, int walk_frame_count, int idle_frame_count)
+{
+    Uint32 current_time = SDL_GetTicks();
+    if (current_time > character->last_frame_time + ANIMATION_SPEED) {
+        if (character->current_state == WALKING) {
+            character->frame = (character->frame + 1) % walk_frame_count;
+            character->rect_src.y = 0;
+        }
+        else if (character->current_state == IDLE) {
+            character->frame = (character->frame + 1) % idle_frame_count;
+            character->rect_src.y = height;
+        }
+        character->rect_src.x = character->frame * width;
+        character->last_frame_time = current_time;
+    }
+};
+
+void UpdateEnemyAnimation(Enemy* enemy)
+{
+    Uint32 current_time = SDL_GetTicks();
+    if (current_time > enemy->last_frame_time + ANIMATION_SPEED) {
+        enemy->frame = (enemy->frame + 1) % enemy->total_frames;
+        enemy->rect_src.y = 0;
+        enemy->rect_src.x = enemy->frame * enemy->rect_src.w;
+        enemy->last_frame_time = current_time;
+    }
+};
+
+void UpdateProjectileAnimation(Projectile* projectile)
+{
+    Uint32 current_time = SDL_GetTicks();
+    if (current_time > projectile->last_frame_time + ANIMATION_SPEED) {
+        projectile->frame = (projectile->frame + 1) % 5; // Esse 5 tem que ser projectile->total_frames
+        projectile->rect_src.y = 0;
+        projectile->rect_src.x = projectile->frame * projectile->rect_src.w;
+        projectile->last_frame_time = current_time;
+    }
+};
+
 void UpdateAnimation(characterState current_state, SDL_Rect& src_rect, int& frame, Uint32& last_frame_time, int width, int height,
     int walk_frame_count, int idle_frame_count)
 {
@@ -133,15 +172,15 @@ void UpdateProjectiles(int width_limit, int height_limit, float multiplier)
 }
 
 
-void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave)
+void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave, int width, int height, int frames)
 {
     Uint32 current_time = SDL_GetTicks();
     if (current_time > last_enemy_time + ENEMY_DELAY) {
         for (int i = 0; i < MAX_ENEMIES; i++) {
             if (!enemies[i].is_active) {
-                enemies[i] = Enemy{ 6, 1 + (wave - 1), 0, 0,
-                    { 0, 0, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG },  //rect_src
-                    { rand() % bg_width, rand() % bg_height, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG }, //dest_dst
+                enemies[i] = Enemy{ 6, 1 + (wave - 1), frames,
+                    { 0, 0, width, height },  //rect_src
+                    { rand() % bg_width, rand() % bg_height, width, height}, //dest_dst
                     enemy_texture, //texture
                     true };
 

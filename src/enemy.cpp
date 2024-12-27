@@ -1,9 +1,9 @@
 #include "enemy.hpp"
 
-Enemy::Enemy() : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), is_active(false) {}
+Enemy::Enemy() : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), is_active(false), total_frames(0) {}
 
-Enemy::Enemy(int spd, int lfe, int frm, int lftime, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active)
-    : Entity(spd, lfe, frm, lftime, src, dst, tex), is_active(active) {
+Enemy::Enemy(int spd, int lftime, int t_frms, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active)
+    : Entity(spd, 0, 0, lftime, src, dst, tex), is_active(active), total_frames(t_frms) {
     UpdateHitbox();
 }
 

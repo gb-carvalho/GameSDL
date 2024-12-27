@@ -24,13 +24,14 @@ enum gameState { TITLE_SCREEN, PLAYING, CARD_SELECTOR, GAME_OVER, PAUSE };
 
 void LevelUp(SDL_Renderer* g_renderer, Character& character, int& current_game_state, TTF_Font* font, DynamicText* level_text);
 void UpdateEnemyPosition(SDL_Rect* enemy_rect_dst, SDL_Rect player_rect, int enemy_speed);
-void UpdateAnimation(characterState current_state, SDL_Rect& src_rect, int& frame, Uint32& last_frame_time, int width, int height,
-    int walk_frame_count, int idle_frame_count);
+void UpdateAnimationCharacter(Character* character, int width, int height, int walk_frame_count, int idle_frame_count);
+void UpdateEnemyAnimation(Enemy* enemy);
+void UpdateProjectileAnimation(Projectile* projectile);
 float CalculateMagnitude(SDL_Rect a, SDL_Rect b);
 void CalculateDirection(SDL_Rect a, SDL_Rect b, Projectile* projectile);
 void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture, int projectile_delay);
 void UpdateProjectiles(int width_limit, int height_limit, float multiplier);
-void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave);
+void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave, int width, int height, int frames);
 std::string TimeFormatted(int time_in_seconds);
 void ResetGame(int& kill_count, int& wave, Character* character, int bg_width, int bg_height, int& start_time, 
                int& elapsed_time, TTF_Font* font, int& total_pause_duration,

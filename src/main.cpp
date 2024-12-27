@@ -59,7 +59,7 @@ int main(int argc, char* argv[])
 
     SDL_Texture* projectile_texture = CreateTextureImg("Assets/mage-bullet-13x13.png");
     SDL_Texture* enemy_texture = CreateTextureImg("Assets/mage_spritesheet_85x94.png");
-    SDL_Texture* card_texture = CreateTextureImg("Assets/generic_card.png");
+    SDL_Texture* bat_texture = CreateTextureImg("Assets/bat.png");
     SDL_Texture* title_texture = CreateTextureImg("Assets/title.png");
 
     //Font
@@ -134,12 +134,12 @@ int main(int argc, char* argv[])
             if (keyState[SDL_SCANCODE_ESCAPE]) current_game_state = PAUSE;
 
             MoveCharacter(&character, keyState, bg_width, bg_height);
-            UpdateAnimation(character.current_state, character.rect_src, character.frame, character.last_frame_time, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG, WALK_FRAME_COUNT, IDLE_FRAME_COUNT);
+            UpdateAnimationCharacter(&character, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG, WALK_FRAME_COUNT, IDLE_FRAME_COUNT);
             for (int i = 0; i < MAX_ENEMIES; i++) {
-                if (enemies[i].is_active) UpdateAnimation(WALKING, enemies[i].rect_src, enemies[i].frame, enemies[i].last_frame_time, ENEMY_MAGE_WIDTH_ORIG, ENEMY_MAGE_HEIGHT_ORIG, 8, 8);
+                if (enemies[i].is_active) UpdateEnemyAnimation(&enemies[i]);
             }
             for (int i = 0; i < MAX_PROJECTILES; i++) {
-                if (projectiles[i].is_active) UpdateAnimation(WALKING, projectiles[i].rect_src, projectiles[i].frame, projectiles[i].last_frame_time, PROJECTILE_WIDTH_ORIG, PROJECTILE_HEIGTH_ORIG, 5, 5);
+                if (projectiles[i].is_active) UpdateProjectileAnimation(&projectiles[i]);
             }
 
             UpdateCamera(character.rect_dst.x, character.rect_dst.y, &camera, character.rect_dst, bg_width, bg_height, screen_width, screen_height);
@@ -159,7 +159,9 @@ int main(int argc, char* argv[])
             };
             SDL_RenderCopy(g_renderer, character.texture, &character.rect_src, &player_render_rect);
 
-            SpawnEnemies(bg_width, bg_height, enemy_texture, wave);
+            if (wave == 1) SpawnEnemies(bg_width, bg_height, bat_texture, wave, ENEMY_BAT_WIDTH, ENEMY_BAT_HEIGHT, ENEMY_BAT_FRAMES);
+            else SpawnEnemies(bg_width, bg_height, enemy_texture, wave, ENEMY_MAGE_WIDTH, ENEMY_MAGE_HEIGHT, ENEMY_MAGE_FRAMES);
+
             FireProjectile(character.rect_dst, projectile_texture, character.projectile_delay);
             UpdateProjectiles(bg_width, bg_height, character.projectile_speed_multiplier);
 
