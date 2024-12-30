@@ -2,8 +2,8 @@
 
 Enemy::Enemy() : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), is_active(false), total_frames(0) {}
 
-Enemy::Enemy(int spd, int lftime, int t_frms, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active)
-    : Entity(spd, 0, 0, lftime, src, dst, tex), is_active(active), total_frames(t_frms) {
+Enemy::Enemy(int spd, int life, int t_frms, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active)
+    : Entity(spd-6, life+100, 0, 0, src, dst, tex), is_active(active), total_frames(t_frms) {
     UpdateHitbox();
 }
 
