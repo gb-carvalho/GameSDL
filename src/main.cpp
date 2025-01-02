@@ -165,13 +165,13 @@ int main(int argc, char* argv[])
             SDL_RenderCopy(g_renderer, character.texture, &character.rect_src, &player_render_rect);
             
             int wave_type = (wave - 1) % 7 + 1;
-            if (wave_type == 2) SpawnEnemies(bg_width, bg_height, bat_texture, wave, ENEMY_BAT_WIDTH, ENEMY_BAT_HEIGHT, ENEMY_BAT_FRAMES);
-            else if (wave_type == 1) SpawnEnemies(bg_width, bg_height, wolf_texture, wave, ENEMY_WOLF_WIDTH, ENEMY_WOLF_HEIGHT, ENEMY_WOLF_FRAMES);
-            else if (wave_type == 3) SpawnEnemies(bg_width, bg_height, golem_texture, wave, ENEMY_GOLEM_WIDTH, ENEMY_GOLEM_HEIGHT, ENEMY_GOLEM_FRAMES);
-            else if (wave_type == 4) SpawnEnemies(bg_width, bg_height, andromalius_texture, wave, ENEMY_ANDROMALIUS_WIDTH, ENEMY_ANDROMALIUS_HEIGHT, ENEMY_ANDROMALIUS_FRAMES);
-            else if (wave_type == 5) SpawnEnemies(bg_width, bg_height, mage_texture, wave, ENEMY_MAGE_WIDTH, ENEMY_MAGE_HEIGHT, ENEMY_MAGE_FRAMES);
-            else if (wave_type == 6) SpawnEnemies(bg_width, bg_height, mage2_texture, wave, ENEMY_MAGE2_WIDTH, ENEMY_MAGE2_HEIGHT, ENEMY_MAGE2_FRAMES);
-            else if (wave_type == 7) SpawnEnemies(bg_width, bg_height, mage3_texture, wave, ENEMY_MAGE3_WIDTH, ENEMY_MAGE3_HEIGHT, ENEMY_MAGE3_FRAMES);
+            if (wave_type == 2) SpawnEnemies(camera, bg_width, bg_height, bat_texture, wave, ENEMY_BAT_WIDTH, ENEMY_BAT_HEIGHT, ENEMY_BAT_FRAMES);
+            else if (wave_type == 1) SpawnEnemies(camera, bg_width, bg_height, wolf_texture, wave, ENEMY_WOLF_WIDTH, ENEMY_WOLF_HEIGHT, ENEMY_WOLF_FRAMES);
+            else if (wave_type == 3) SpawnEnemies(camera, bg_width, bg_height, golem_texture, wave, ENEMY_GOLEM_WIDTH, ENEMY_GOLEM_HEIGHT, ENEMY_GOLEM_FRAMES);
+            else if (wave_type == 4) SpawnEnemies(camera, bg_width, bg_height, andromalius_texture, wave, ENEMY_ANDROMALIUS_WIDTH, ENEMY_ANDROMALIUS_HEIGHT, ENEMY_ANDROMALIUS_FRAMES);
+            else if (wave_type == 5) SpawnEnemies(camera, bg_width, bg_height, mage_texture, wave, ENEMY_MAGE_WIDTH, ENEMY_MAGE_HEIGHT, ENEMY_MAGE_FRAMES);
+            else if (wave_type == 6) SpawnEnemies(camera, bg_width, bg_height, mage2_texture, wave, ENEMY_MAGE2_WIDTH, ENEMY_MAGE2_HEIGHT, ENEMY_MAGE2_FRAMES);
+            else if (wave_type == 7) SpawnEnemies(camera, bg_width, bg_height, mage3_texture, wave, ENEMY_MAGE3_WIDTH, ENEMY_MAGE3_HEIGHT, ENEMY_MAGE3_FRAMES);
 
             FireProjectile(character.rect_dst, projectile_texture, character.projectile_delay);
             UpdateProjectiles(bg_width, bg_height, character.projectile_speed_multiplier);

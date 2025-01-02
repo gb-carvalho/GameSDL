@@ -10,6 +10,8 @@
 #include "character.hpp"
 #include "card.hpp"
 #include "render.hpp"
+#include "collision.hpp"
+
 
 #define ANIMATION_SPEED        160 //Isso deveria ter valor diferente por entidade talvez
 #define FIRST_WAVE_TIME        30
@@ -31,7 +33,7 @@ float CalculateMagnitude(SDL_Rect a, SDL_Rect b);
 void CalculateDirection(SDL_Rect a, SDL_Rect b, Projectile* projectile);
 void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture, int projectile_delay);
 void UpdateProjectiles(int width_limit, int height_limit, float multiplier);
-void SpawnEnemies(int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave, int width, int height, int frames);
+void SpawnEnemies(SDL_Rect camera, int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave, int width, int height, int frames);
 std::string TimeFormatted(int time_in_seconds);
 void ResetGame(int& kill_count, int& wave, Character* character, int bg_width, int bg_height, int& start_time, 
                int& elapsed_time, TTF_Font* font, int& total_pause_duration,
