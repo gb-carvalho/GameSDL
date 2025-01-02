@@ -51,7 +51,7 @@ void InitSDLMusic()
     }
 }
 
-Mix_Chunk* InitSoundEffect(const char* sound_path)
+Mix_Chunk* InitSoundEffect(const char* sound_path, int volume)
 {
     Mix_Chunk* sound = Mix_LoadWAV(sound_path);
     if (!sound) {
@@ -59,7 +59,7 @@ Mix_Chunk* InitSoundEffect(const char* sound_path)
         return nullptr;
     }
 
-    Mix_VolumeChunk(sound, MIX_MAX_VOLUME / 30);
+    Mix_VolumeChunk(sound, volume);
     return sound;
 }
 

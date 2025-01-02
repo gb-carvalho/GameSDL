@@ -42,7 +42,9 @@ int main(int argc, char* argv[])
 
     InitSDLMusic();
     Mix_Music* music = InitMusic("Assets/music.mp3", -1);
-    Mix_Chunk* damage_sound = InitSoundEffect("Assets/character_damage.wav");
+    Mix_Chunk* damage_sound = InitSoundEffect("Assets/character_damage.wav", MIX_MAX_VOLUME / 7);
+    Mix_Chunk* enemy_damage_sound = InitSoundEffect("Assets/enemy_damage.wav", MIX_MAX_VOLUME / 15);
+    Mix_Chunk* projectile_sound = InitSoundEffect("Assets/projectile.wav", MIX_MAX_VOLUME / 5);
 
     SDL_Rect camera = { 0, 0, screen_width, screen_height };
 
@@ -165,15 +167,15 @@ int main(int argc, char* argv[])
             SDL_RenderCopy(g_renderer, character.texture, &character.rect_src, &player_render_rect);
             
             int wave_type = (wave - 1) % 7 + 1;
-            if (wave_type == 2) SpawnEnemies(camera, bg_width, bg_height, bat_texture, wave, ENEMY_BAT_WIDTH, ENEMY_BAT_HEIGHT, ENEMY_BAT_FRAMES);
-            else if (wave_type == 1) SpawnEnemies(camera, bg_width, bg_height, wolf_texture, wave, ENEMY_WOLF_WIDTH, ENEMY_WOLF_HEIGHT, ENEMY_WOLF_FRAMES);
+            if (wave_type == 1)      SpawnEnemies(camera, bg_width, bg_height, bat_texture, wave, ENEMY_BAT_WIDTH, ENEMY_BAT_HEIGHT, ENEMY_BAT_FRAMES);
+            else if (wave_type == 2) SpawnEnemies(camera, bg_width, bg_height, wolf_texture, wave, ENEMY_WOLF_WIDTH, ENEMY_WOLF_HEIGHT, ENEMY_WOLF_FRAMES);
             else if (wave_type == 3) SpawnEnemies(camera, bg_width, bg_height, golem_texture, wave, ENEMY_GOLEM_WIDTH, ENEMY_GOLEM_HEIGHT, ENEMY_GOLEM_FRAMES);
             else if (wave_type == 4) SpawnEnemies(camera, bg_width, bg_height, andromalius_texture, wave, ENEMY_ANDROMALIUS_WIDTH, ENEMY_ANDROMALIUS_HEIGHT, ENEMY_ANDROMALIUS_FRAMES);
             else if (wave_type == 5) SpawnEnemies(camera, bg_width, bg_height, mage_texture, wave, ENEMY_MAGE_WIDTH, ENEMY_MAGE_HEIGHT, ENEMY_MAGE_FRAMES);
             else if (wave_type == 6) SpawnEnemies(camera, bg_width, bg_height, mage2_texture, wave, ENEMY_MAGE2_WIDTH, ENEMY_MAGE2_HEIGHT, ENEMY_MAGE2_FRAMES);
             else if (wave_type == 7) SpawnEnemies(camera, bg_width, bg_height, mage3_texture, wave, ENEMY_MAGE3_WIDTH, ENEMY_MAGE3_HEIGHT, ENEMY_MAGE3_FRAMES);
 
-            FireProjectile(character.rect_dst, projectile_texture, character.projectile_delay);
+            FireProjectile(character.rect_dst, projectile_texture, character.projectile_delay, projectile_sound);
             UpdateProjectiles(bg_width, bg_height, character.projectile_speed_multiplier);
 
             for (int i = 0; i < MAX_ENEMIES; i++) {
@@ -203,7 +205,7 @@ int main(int argc, char* argv[])
                     }
 
                     CheckProjectileCollisionWithEnemy(g_renderer, character, enemies[i].hitbox, enemies[i].life, enemies[i].is_active, camera, kill_count, 
-                        small_font, current_game_state, &kill_count_text, &level_text);
+                        small_font, current_game_state, &kill_count_text, &level_text, enemy_damage_sound);
                     for (int j = i + 1; j < MAX_ENEMIES; j++) {
                         if (!enemies[j].is_active || resolved_collision[i][j]) continue;
                         resolveCollision(&enemies[i].rect_dst, &enemies[j].rect_dst);

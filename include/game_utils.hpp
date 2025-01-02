@@ -3,6 +3,7 @@
 #include <SDL_ttf.h>
 #include <fstream>
 #include <vector>
+#include <SDL_mixer.h>
 
 #include "enemy.hpp"
 #include "projectile.hpp"
@@ -31,7 +32,7 @@ void UpdateEnemyAnimation(Enemy* enemy);
 void UpdateProjectileAnimation(Projectile* projectile);
 float CalculateMagnitude(SDL_Rect a, SDL_Rect b);
 void CalculateDirection(SDL_Rect a, SDL_Rect b, Projectile* projectile);
-void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture, int projectile_delay);
+void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture, int projectile_delay, Mix_Chunk* projectile_sound);
 void UpdateProjectiles(int width_limit, int height_limit, float multiplier);
 void SpawnEnemies(SDL_Rect camera, int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave, int width, int height, int frames);
 std::string TimeFormatted(int time_in_seconds);

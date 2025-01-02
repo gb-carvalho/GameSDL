@@ -126,7 +126,7 @@ void CalculateDirection(SDL_Rect a, SDL_Rect b, Projectile* projectile)
     }
 }
 
-void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture, int projectile_delay)
+void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture, int projectile_delay, Mix_Chunk* projectile_sound)
 {
     float magnitude;
 
@@ -151,8 +151,11 @@ void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture, int p
                 projectiles[i].texture = projectile_texture;
                 projectiles[i].rect_src = { 0, 0, PROJECTILE_WIDTH_ORIG, PROJECTILE_HEIGTH_ORIG };
                 projectiles[i].rect_dst = { player_rect.x + player_rect.w / 2, player_rect.y + player_rect.h / 2, 25, 25 };
-                if (closest_enemy) CalculateDirection(player_rect, closest_enemy->rect_dst, &projectiles[i]);
-                if (closest_enemy) projectiles[i].is_active = true;
+                if (closest_enemy){
+                    CalculateDirection(player_rect, closest_enemy->rect_dst, &projectiles[i]);
+                    projectiles[i].is_active = true;
+                    Mix_PlayChannel(-1, projectile_sound, 0);
+                }
                 projectiles[i].last_frame_time = 0;
                 last_projectile_time = current_time;
                 break;
