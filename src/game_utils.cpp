@@ -12,10 +12,13 @@ void LevelUp(SDL_Renderer* g_renderer, Character& character, int& current_game_s
     level_text->Update(g_renderer, font, "Level: " + std::to_string(character.level), { 255, 255, 255 }, { 0, 0, 0 });
 }
 
-void UpdateEnemyPosition(SDL_Rect* enemy_rect_dst, SDL_Rect player_rect, int enemy_speed) {
+void UpdateEnemyPosition(Enemy* enemy, SDL_Rect player_rect) {
     // Calcula a direção em que o inimigo deve se mover
-    float diff_x = static_cast<float>(player_rect.x - enemy_rect_dst->x);
-    float diff_y = static_cast<float>(player_rect.y - enemy_rect_dst->y);
+    float diff_x = static_cast<float>(player_rect.x - enemy->rect_dst.x);
+    float diff_y = static_cast<float>(player_rect.y - enemy->rect_dst.y);
+
+    if (diff_x < 0) enemy->flip = SDL_FLIP_HORIZONTAL;
+    else enemy->flip = SDL_FLIP_NONE; 
 
     // Calcula a magnitude (comprimento do vetor)
     float magnitude = sqrt(diff_x * diff_x + diff_y * diff_y);
@@ -24,8 +27,8 @@ void UpdateEnemyPosition(SDL_Rect* enemy_rect_dst, SDL_Rect player_rect, int ene
 
     if (magnitude > 20) {
         // Normaliza a direção e move o inimigo
-        enemy_rect_dst->x += static_cast<int>((diff_x / magnitude) * enemy_speed);
-        enemy_rect_dst->y += static_cast<int>((diff_y / magnitude) * enemy_speed);
+        enemy->rect_dst.x += static_cast<int>((diff_x / magnitude) * enemy->speed);
+        enemy->rect_dst.y += static_cast<int>((diff_y / magnitude) * enemy->speed);
     }
 }
 

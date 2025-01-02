@@ -3,9 +3,7 @@
 
 class Entity {
 public:
-    int speed;
-    int life;
-    int frame;
+    int speed, life, frame;
     Uint32 last_frame_time;
     SDL_Rect rect_src, rect_dst, hitbox;
     SDL_Texture* texture;

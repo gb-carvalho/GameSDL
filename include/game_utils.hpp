@@ -23,7 +23,7 @@ extern Enemy enemies[MAX_ENEMIES];
 enum gameState { TITLE_SCREEN, PLAYING, CARD_SELECTOR, GAME_OVER, PAUSE };
 
 void LevelUp(SDL_Renderer* g_renderer, Character& character, int& current_game_state, TTF_Font* font, DynamicText* level_text);
-void UpdateEnemyPosition(SDL_Rect* enemy_rect_dst, SDL_Rect player_rect, int enemy_speed);
+void UpdateEnemyPosition(Enemy* enemy, SDL_Rect player_rect);
 void UpdateAnimationCharacter(Character* character, int width, int height, int walk_frame_count, int idle_frame_count);
 void UpdateEnemyAnimation(Enemy* enemy);
 void UpdateProjectileAnimation(Projectile* projectile);

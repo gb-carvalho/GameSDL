@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
 
             for (int i = 0; i < MAX_ENEMIES; i++) {
                 if (enemies[i].is_active) {
-                    UpdateEnemyPosition(&enemies[i].rect_dst, character.rect_dst, enemies[i].speed);
+                    UpdateEnemyPosition(&enemies[i], character.rect_dst);
                     SDL_Rect enemy_render_rect = {
                         enemies[i].rect_dst.x - camera.x,
                         enemies[i].rect_dst.y - camera.y,
@@ -186,7 +186,7 @@ int main(int argc, char* argv[])
                         enemies[i].rect_dst.h + 10
                     };
                     enemies[i].UpdateHitbox();
-                    SDL_RenderCopy(g_renderer, enemies[i].texture, &enemies[i].rect_src, &enemy_render_rect);
+                    SDL_RenderCopyEx(g_renderer, enemies[i].texture, &enemies[i].rect_src, &enemy_render_rect, 0, NULL, enemies[i].flip);
 
                     if (CheckCollision(character.hitbox, enemies[i].hitbox, camera)) {
                         Uint32 current_time = SDL_GetTicks();

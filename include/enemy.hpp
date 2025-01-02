@@ -36,6 +36,7 @@ class Enemy : public Entity {
 public:
     bool is_active;
     int total_frames;
+    SDL_RendererFlip flip;
 
     Enemy();
     Enemy(int spd, int lftime, int t_frms, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active);
