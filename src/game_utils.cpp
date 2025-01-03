@@ -2,7 +2,7 @@
 
 Enemy enemies[MAX_ENEMIES];
 std::vector<int> random_card_array(CARDS_TO_CHOSE);
-Uint32 last_projectile_time = 0;
+Uint32 last_projectiles_times[] = { 0, 0 };
 Uint32 last_enemy_time = 0;
 
 void LevelUp(SDL_Renderer* g_renderer, Character& character, int& current_game_state, TTF_Font* font, DynamicText *level_text) {
@@ -29,6 +29,23 @@ void UpdateEnemyPosition(Enemy* enemy, SDL_Rect player_rect) {
         // Normaliza a direção e move o inimigo
         enemy->rect_dst.x += static_cast<int>((diff_x / magnitude) * enemy->speed);
         enemy->rect_dst.y += static_cast<int>((diff_y / magnitude) * enemy->speed);
+    }
+}
+
+void UpdateFlameballProjectilePosition(Projectile* projectile, SDL_Rect enemy_rect) {
+    // Calcula a direção em que o inimigo deve se mover
+    float diff_x = static_cast<float>(enemy_rect.x - projectile->rect_dst.x);
+    float diff_y = static_cast<float>(enemy_rect.y - projectile->rect_dst.y);
+
+    // Calcula a magnitude (comprimento do vetor)
+    float magnitude = sqrt(diff_x * diff_x + diff_y * diff_y);
+
+    // Verifica se a magnitude é maior que zero antes de normalizar
+
+    if (magnitude > 20) {
+        // Normaliza a direção e move o inimigo
+        projectile->rect_dst.x += static_cast<int>((diff_x / magnitude) * projectile->speed);
+        projectile->rect_dst.y += static_cast<int>((diff_y / magnitude) * projectile->speed);
     }
 }
 
@@ -64,7 +81,7 @@ void UpdateProjectileAnimation(Projectile* projectile)
 {
     Uint32 current_time = SDL_GetTicks();
     if (current_time > projectile->last_frame_time + ANIMATION_SPEED) {
-        projectile->frame = (projectile->frame + 1) % 5; // Esse 5 tem que ser projectile->total_frames
+        projectile->frame = (projectile->frame + 1) % projectile->total_frames;
         projectile->rect_src.y = 0;
         projectile->rect_src.x = projectile->frame * projectile->rect_src.w;
         projectile->last_frame_time = current_time;
@@ -126,36 +143,48 @@ void CalculateDirection(SDL_Rect a, SDL_Rect b, Projectile* projectile)
     }
 }
 
-void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture, int projectile_delay, Mix_Chunk* projectile_sound)
-{
-    float magnitude;
+Enemy* FindClosestEnemy(SDL_Rect player_rect, Enemy enemies[], int max_enemies) {
+    float closest_distance = std::numeric_limits<float>::max();
+    Enemy* closest_enemy = nullptr;
 
+    for (int i = 0; i < max_enemies; i++) {
+        if (enemies[i].is_active) {
+            float magnitude = CalculateMagnitude(player_rect, enemies[i].rect_dst);
+            if (magnitude < closest_distance) {
+                closest_distance = magnitude;
+                closest_enemy = &enemies[i];
+            }
+        }
+    }
+
+    return closest_enemy;
+}
+
+void FireSingleProjectile(SDL_Rect player_rect, SDL_Texture* texture, int speed, int total_frames,
+    SDL_Rect rect_src, SDL_Rect rect_dst,
+    int delay, Uint32& last_projectile_time, Mix_Chunk* sound, projectileType type)
+{
     Uint32 current_time = SDL_GetTicks();
-    if (current_time > last_projectile_time + projectile_delay) {
+    if (current_time > last_projectile_time + delay) {
         for (int i = 0; i < MAX_PROJECTILES; i++) {
             if (!projectiles[i].is_active) {
 
-                float closest_distance = std::numeric_limits<float>::max();
-                Enemy* closest_enemy = nullptr;
+               
+                
+                projectiles[i].type = type;
+                projectiles[i].texture = texture;
+                projectiles[i].speed = speed;
+                projectiles[i].total_frames = total_frames;
+                projectiles[i].rect_src = rect_src;
+                projectiles[i].rect_dst = rect_dst;
 
-                for (int j = 0; j < MAX_ENEMIES; j++) {
-                    if (enemies[j].is_active) {
-                        magnitude = CalculateMagnitude(player_rect, enemies[j].rect_dst);
-                        if (magnitude < closest_distance) {
-                            closest_distance = magnitude;
-                            closest_enemy = &enemies[j];
-                        }
-                    }
-                }
-
-                projectiles[i].texture = projectile_texture;
-                projectiles[i].rect_src = { 0, 0, PROJECTILE_WIDTH_ORIG, PROJECTILE_HEIGTH_ORIG };
-                projectiles[i].rect_dst = { player_rect.x + player_rect.w / 2, player_rect.y + player_rect.h / 2, 25, 25 };
-                if (closest_enemy){
-                    CalculateDirection(player_rect, closest_enemy->rect_dst, &projectiles[i]);
+                Enemy* closest_enemy = FindClosestEnemy(player_rect, enemies, MAX_ENEMIES);
+                if (closest_enemy) {
+                    if (type != FLAMEBALL) CalculateDirection(player_rect, closest_enemy->rect_dst, &projectiles[i]);
                     projectiles[i].is_active = true;
-                    Mix_PlayChannel(-1, projectile_sound, 0);
+                    Mix_PlayChannel(-1, sound, 0);
                 }
+
                 projectiles[i].last_frame_time = 0;
                 last_projectile_time = current_time;
                 break;
@@ -164,11 +193,48 @@ void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture, int p
     }
 }
 
+void FireProjectiles(SDL_Rect player_rect, SDL_Texture* projectile_textures[], int projectile_delay, Mix_Chunk* projectile_sound)
+{
+    // Fire MagicBall
+    FireSingleProjectile(
+        player_rect,
+        projectile_textures[MAGICBALL],
+        15,                    // Speed
+        5,                     // Total frames
+        { 0, 0, PROJECTILE_WIDTH_ORIG, PROJECTILE_HEIGTH_ORIG },  // rect_src
+        { player_rect.x + player_rect.w / 4, player_rect.y + player_rect.h / 2, 25, 25 }, // rect_dst
+        projectile_delay,
+        last_projectiles_times[MAGICBALL],
+        projectile_sound,
+        MAGICBALL
+    );
+
+    // Fire FlameBall
+    FireSingleProjectile(
+        player_rect,
+        projectile_textures[FLAMEBALL],
+        2,                      // Speed
+        4,                      // Total frames
+        { 0, 0, PROJECTILE_FLAMEBALL_WIDTH_ORIG, PROJECTILE_FLAMEBALL_HEIGTH_ORIG },  // rect_src
+        { player_rect.x + player_rect.w / 4, player_rect.y + player_rect.h / 4, PROJECTILE_FLAMEBALL_WIDTH_ORIG, PROJECTILE_FLAMEBALL_HEIGTH_ORIG }, // rect_dst
+        projectile_delay + 1000,
+        last_projectiles_times[FLAMEBALL],
+        projectile_sound,
+        FLAMEBALL
+    );
+}
+
 void UpdateProjectiles(int width_limit, int height_limit, float multiplier)
 {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
-        projectiles[i].rect_dst.x += static_cast<int>(projectiles[i].dir_x * PROJECTILE_SPEED * multiplier);
-        projectiles[i].rect_dst.y += static_cast<int>(projectiles[i].dir_y * PROJECTILE_SPEED * multiplier);
+        if (projectiles[i].type == MAGICBALL) {
+            projectiles[i].rect_dst.x += static_cast<int>(projectiles[i].dir_x * projectiles[i].speed * multiplier);
+            projectiles[i].rect_dst.y += static_cast<int>(projectiles[i].dir_y * projectiles[i].speed * multiplier);
+        }else if (projectiles[i].type == FLAMEBALL) {
+            Enemy* closest_enemy = FindClosestEnemy(projectiles[i].rect_dst, enemies, MAX_ENEMIES);
+            UpdateFlameballProjectilePosition(&projectiles[i], closest_enemy->rect_dst);
+        }
+
         projectiles[i].UpdateHitbox();
         if (projectiles[i].rect_dst.x < 0 || projectiles[i].rect_dst.x > width_limit ||
             projectiles[i].rect_dst.y < 0 || projectiles[i].rect_dst.y > height_limit) {
@@ -176,7 +242,6 @@ void UpdateProjectiles(int width_limit, int height_limit, float multiplier)
         }
     }
 }
-
 
 void SpawnEnemies(SDL_Rect camera, int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave, int width, int height, int frames)
 {

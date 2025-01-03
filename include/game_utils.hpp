@@ -18,8 +18,8 @@
 #define FIRST_WAVE_TIME        30
 #define SAVE_FILE              "sdl.dat"
 
-extern Uint32 last_projectile_time;
-extern Uint32 last_enemy_tim;
+extern Uint32 last_projectiles_times[];
+extern Uint32 last_enemy_time;
 
 extern std::vector<int> random_card_array;
 extern Enemy enemies[MAX_ENEMIES];
@@ -32,8 +32,13 @@ void UpdateEnemyAnimation(Enemy* enemy);
 void UpdateProjectileAnimation(Projectile* projectile);
 float CalculateMagnitude(SDL_Rect a, SDL_Rect b);
 void CalculateDirection(SDL_Rect a, SDL_Rect b, Projectile* projectile);
-void FireProjectile(SDL_Rect player_rect, SDL_Texture* projectile_texture, int projectile_delay, Mix_Chunk* projectile_sound);
+void FireSingleProjectile(SDL_Rect player_rect, SDL_Texture* texture, int speed, int total_frames,
+    SDL_Rect rect_src, SDL_Rect rect_dst,
+    int delay, Uint32& last_projectile_time, Mix_Chunk* sound, projectileType type);
+Enemy* FindClosestEnemy(SDL_Rect player_rect, Enemy enemies[], int max_enemies);
+void FireProjectiles(SDL_Rect player_rect, SDL_Texture* projectile_texture[], int projectile_delay, Mix_Chunk* projectile_sound);
 void UpdateProjectiles(int width_limit, int height_limit, float multiplier);
+void UpdateFlameballProjectilePosition(Projectile* projectile, SDL_Rect enemy_rect);
 void SpawnEnemies(SDL_Rect camera, int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave, int width, int height, int frames);
 std::string TimeFormatted(int time_in_seconds);
 void ResetGame(int& kill_count, int& wave, Character* character, int bg_width, int bg_height, int& start_time, 

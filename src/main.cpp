@@ -42,7 +42,7 @@ int main(int argc, char* argv[])
 
     InitSDLMusic();
     Mix_Music* music = InitMusic("Assets/music.mp3", -1);
-    Mix_Chunk* damage_sound = InitSoundEffect("Assets/character_damage.wav", MIX_MAX_VOLUME / 7);
+    Mix_Chunk* damage_sound =   InitSoundEffect("Assets/character_damage.wav", MIX_MAX_VOLUME / 7);
     Mix_Chunk* enemy_damage_sound = InitSoundEffect("Assets/enemy_damage.wav", MIX_MAX_VOLUME / 15);
     Mix_Chunk* projectile_sound = InitSoundEffect("Assets/projectile.wav", MIX_MAX_VOLUME / 5);
 
@@ -60,6 +60,9 @@ int main(int argc, char* argv[])
         IDLE, CHARACTER_PROJECTILE_DELAY};
 
     SDL_Texture* projectile_texture = CreateTextureImg("Assets/mage-bullet-13x13.png");
+    SDL_Texture* projectile_flameball_texture = CreateTextureImg("Assets/flameball-32x32.png");
+    SDL_Texture* projectile_textures[] = { projectile_texture, projectile_flameball_texture };
+
     SDL_Texture* mage_texture = CreateTextureImg("Assets/mage.png");
     SDL_Texture* mage2_texture = CreateTextureImg("Assets/mage2.png");
     SDL_Texture* mage3_texture = CreateTextureImg("Assets/mage3.png");
@@ -175,7 +178,7 @@ int main(int argc, char* argv[])
             else if (wave_type == 6) SpawnEnemies(camera, bg_width, bg_height, mage2_texture, wave, ENEMY_MAGE2_WIDTH, ENEMY_MAGE2_HEIGHT, ENEMY_MAGE2_FRAMES);
             else if (wave_type == 7) SpawnEnemies(camera, bg_width, bg_height, mage3_texture, wave, ENEMY_MAGE3_WIDTH, ENEMY_MAGE3_HEIGHT, ENEMY_MAGE3_FRAMES);
 
-            FireProjectile(character.rect_dst, projectile_texture, character.projectile_delay, projectile_sound);
+            FireProjectiles(character.rect_dst, projectile_textures, character.projectile_delay, projectile_sound);
             UpdateProjectiles(bg_width, bg_height, character.projectile_speed_multiplier);
 
             for (int i = 0; i < MAX_ENEMIES; i++) {
@@ -351,7 +354,8 @@ int main(int argc, char* argv[])
             if (keyState[SDL_SCANCODE_RETURN]) {
                 total_pause_duration += SDL_GetTicks() - pause_start_time;
                 pause_start_time = 0;
-                last_projectile_time = SDL_GetTicks();
+                last_projectiles_times[MAGICBALL] = SDL_GetTicks();
+                last_projectiles_times[FLAMEBALL] = SDL_GetTicks();
                 current_game_state = PLAYING;
             }
             break;
