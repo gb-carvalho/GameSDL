@@ -178,7 +178,7 @@ int main(int argc, char* argv[])
             else if (wave_type == 6) SpawnEnemies(camera, bg_width, bg_height, mage2_texture, wave, ENEMY_MAGE2_WIDTH, ENEMY_MAGE2_HEIGHT, ENEMY_MAGE2_FRAMES);
             else if (wave_type == 7) SpawnEnemies(camera, bg_width, bg_height, mage3_texture, wave, ENEMY_MAGE3_WIDTH, ENEMY_MAGE3_HEIGHT, ENEMY_MAGE3_FRAMES);
 
-            FireProjectiles(character.rect_dst, projectile_textures, character.projectile_delay, projectile_sound);
+            FireProjectiles(character, projectile_textures, projectile_sound);
             UpdateProjectiles(bg_width, bg_height, character.projectile_speed_multiplier);
 
             for (int i = 0; i < MAX_ENEMIES; i++) {

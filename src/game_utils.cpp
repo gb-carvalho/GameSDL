@@ -193,35 +193,37 @@ void FireSingleProjectile(SDL_Rect player_rect, SDL_Texture* texture, int speed,
     }
 }
 
-void FireProjectiles(SDL_Rect player_rect, SDL_Texture* projectile_textures[], int projectile_delay, Mix_Chunk* projectile_sound)
+void FireProjectiles(Character character, SDL_Texture* projectile_textures[], Mix_Chunk* projectile_sound)
 {
     // Fire MagicBall
     FireSingleProjectile(
-        player_rect,
+        character.rect_dst,
         projectile_textures[MAGICBALL],
         15,                    // Speed
         5,                     // Total frames
         { 0, 0, PROJECTILE_WIDTH_ORIG, PROJECTILE_HEIGTH_ORIG },  // rect_src
-        { player_rect.x + player_rect.w / 4, player_rect.y + player_rect.h / 2, 25, 25 }, // rect_dst
-        projectile_delay,
+        { character.rect_dst.x + character.rect_dst.w / 4, character.rect_dst.y + character.rect_dst.h / 2, 25, 25 }, // rect_dst
+        character.projectile_delay,
         last_projectiles_times[MAGICBALL],
         projectile_sound,
         MAGICBALL
     );
 
     // Fire FlameBall
-    FireSingleProjectile(
-        player_rect,
-        projectile_textures[FLAMEBALL],
-        2,                      // Speed
-        4,                      // Total frames
-        { 0, 0, PROJECTILE_FLAMEBALL_WIDTH_ORIG, PROJECTILE_FLAMEBALL_HEIGTH_ORIG },  // rect_src
-        { player_rect.x + player_rect.w / 4, player_rect.y + player_rect.h / 4, PROJECTILE_FLAMEBALL_WIDTH_ORIG, PROJECTILE_FLAMEBALL_HEIGTH_ORIG }, // rect_dst
-        projectile_delay + 1000,
-        last_projectiles_times[FLAMEBALL],
-        projectile_sound,
-        FLAMEBALL
-    );
+    if (character.flameball) {
+        FireSingleProjectile(
+            character.rect_dst,
+            projectile_textures[FLAMEBALL],
+            2,                      // Speed
+            4,                      // Total frames
+            { 0, 0, PROJECTILE_FLAMEBALL_WIDTH_ORIG, PROJECTILE_FLAMEBALL_HEIGTH_ORIG },  // rect_src
+            { character.rect_dst.x + character.rect_dst.w / 4, character.rect_dst.y + character.rect_dst.h / 4, PROJECTILE_FLAMEBALL_WIDTH_ORIG, PROJECTILE_FLAMEBALL_HEIGTH_ORIG }, // rect_dst
+            character.projectile_delay + (3500 - (500 * character.flameball)),
+            last_projectiles_times[FLAMEBALL],
+            projectile_sound,
+            FLAMEBALL
+        );
+    }
 }
 
 void UpdateProjectiles(int width_limit, int height_limit, float multiplier)
@@ -232,7 +234,7 @@ void UpdateProjectiles(int width_limit, int height_limit, float multiplier)
             projectiles[i].rect_dst.y += static_cast<int>(projectiles[i].dir_y * projectiles[i].speed * multiplier);
         }else if (projectiles[i].type == FLAMEBALL) {
             Enemy* closest_enemy = FindClosestEnemy(projectiles[i].rect_dst, enemies, MAX_ENEMIES);
-            UpdateFlameballProjectilePosition(&projectiles[i], closest_enemy->rect_dst);
+            if(closest_enemy) UpdateFlameballProjectilePosition(&projectiles[i], closest_enemy->rect_dst);
         }
 
         projectiles[i].UpdateHitbox();
@@ -369,6 +371,7 @@ void SelectCard(std::string card_name, Character& character, TTF_Font* font, Dyn
     else if (card_name == "Damage") character.damage++;
     else if (card_name == "Projectile Speed") character.projectile_speed_multiplier += 0.5;
     else if (card_name == "EXP") character.exp_multiplier += 0.5;
+    else if (card_name == "Flameball") character.flameball += 1;  
 }
 
 void DamageColor(SDL_Texture* texture, Uint32 last_damage_time, bool& took_damage)

@@ -16,20 +16,21 @@ void Character::UpdateHitbox(){
 }
 
 void Character::reset(SDL_Rect rect_dst_new) {
-    life = 3;
-    damage = 1;
-    frame = 0;
-    exp = 0;
-    level = 1;
-    speed = 7;
+    life     = 3;
+    damage   = 1;
+    frame    = 0;   
+    exp      = 0;
+    level    = 1;
+    speed    = 7;
     rect_dst = rect_dst_new;
-    pos_x = static_cast<float>(rect_dst_new.x);
-    pos_y = static_cast<float>(rect_dst_new.y);
-    last_frame_time = 0;
-    level_to_update = 0;
+    pos_x    = static_cast<float>(rect_dst_new.x);
+    pos_y    = static_cast<float>(rect_dst_new.y);
+    flameball        = 0;
+    last_frame_time  = 0;
+    level_to_update  = 0;
     projectile_delay = CHARACTER_PROJECTILE_DELAY;
+    exp_multiplier   = 1;
     projectile_speed_multiplier = 1;
-    exp_multiplier = 1;
 }
 
 void Character::updateState(characterState newState) {
