@@ -61,7 +61,8 @@ int main(int argc, char* argv[])
 
     SDL_Texture* projectile_texture = CreateTextureImg("Assets/mage-bullet-13x13.png");
     SDL_Texture* projectile_flameball_texture = CreateTextureImg("Assets/flameball-32x32.png");
-    SDL_Texture* projectile_textures[] = { projectile_texture, projectile_flameball_texture };
+    SDL_Texture* projectile_vortex_texture = CreateTextureImg("Assets/Effect_TheVortex_1_429x429.png");
+    SDL_Texture* projectile_textures[] = { projectile_texture, projectile_flameball_texture, projectile_vortex_texture };
 
     SDL_Texture* mage_texture = CreateTextureImg("Assets/mage.png");
     SDL_Texture* mage2_texture = CreateTextureImg("Assets/mage2.png");
@@ -167,7 +168,6 @@ int main(int argc, char* argv[])
                  character.rect_dst.y - camera.y,
                  character.rect_dst.w, character.rect_dst.h
             };
-            SDL_RenderCopy(g_renderer, character.texture, &character.rect_src, &player_render_rect);
             
             int wave_type = (wave - 1) % 7 + 1;
             if (wave_type == 1)      SpawnEnemies(BAT, camera, bg_width, bg_height, bat_texture, wave, ENEMY_BAT_WIDTH, ENEMY_BAT_HEIGHT, ENEMY_BAT_FRAMES, 100);
@@ -179,7 +179,7 @@ int main(int argc, char* argv[])
             else if (wave_type == 7) SpawnEnemies(MAGE3, camera, bg_width, bg_height, mage3_texture, wave, ENEMY_MAGE3_WIDTH, ENEMY_MAGE3_HEIGHT, ENEMY_MAGE3_FRAMES, 100);
 
             FireProjectiles(character, projectile_textures, projectile_sound);
-            UpdateProjectiles(bg_width, bg_height, character.projectile_speed_multiplier);
+            UpdateProjectiles(bg_width, bg_height, character.projectile_speed_multiplier, character);
 
             for (int i = 0; i < MAX_ENEMIES; i++) {
                 if (enemies[i].is_active) {
@@ -198,7 +198,7 @@ int main(int argc, char* argv[])
                         if (current_time > character.last_damage_time + DAMAGE_COOLDOWN) {
                             character.life -= 1;
                             character.took_damage = true;
-                            life_text.Update(g_renderer, small_font, "Lifes: " + std::to_string(character.life), { 255, 255, 255 }, { 0, 0, 0 });
+                            life_text.Update(g_renderer, small_font, "Lifes: " + std::to_string(static_cast<int>(character.life)), { 255, 255, 255 }, { 0, 0, 0 });
                             character.last_damage_time = current_time;
                             Mix_PlayChannel(-1, damage_sound, 0);
                             if (character.life <= 0) {
@@ -209,6 +209,7 @@ int main(int argc, char* argv[])
 
                     CheckProjectileCollisionWithEnemy(g_renderer, character, enemies[i].hitbox, enemies[i].life, enemies[i].is_active, camera, kill_count, 
                         small_font, current_game_state, &kill_count_text, &level_text, enemy_damage_sound);
+
                     for (int j = i + 1; j < MAX_ENEMIES; j++) {
                         if (!enemies[j].is_active || resolved_collision[i][j]) continue;
                         resolveCollision(&enemies[i].rect_dst, &enemies[j].rect_dst);
@@ -220,11 +221,13 @@ int main(int argc, char* argv[])
 
             RenderHeader(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, character, total_pause_duration,
                          &stopwatch_text, &life_text, &kill_count_text, &level_text);
-            if (time_left <= 0) NewWave(current_game_state, wave, skip);         
+            if (time_left <= 0) NewWave(current_game_state, wave, skip);  
 
             memset(resolved_collision, 0, sizeof(resolved_collision));
 
             RenderProjectiles(camera);
+            SDL_RenderCopy(g_renderer, character.texture, &character.rect_src, &player_render_rect);
+
             break;
         }
         case CARD_SELECTOR: {
@@ -356,6 +359,7 @@ int main(int argc, char* argv[])
                 pause_start_time = 0;
                 last_projectiles_times[MAGICBALL] = SDL_GetTicks();
                 last_projectiles_times[FLAMEBALL] = SDL_GetTicks();
+                last_projectiles_times[VORTEX] = SDL_GetTicks();
                 current_game_state = PLAYING;
             }
             break;

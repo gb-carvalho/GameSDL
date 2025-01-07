@@ -2,7 +2,7 @@
 
 Enemy enemies[MAX_ENEMIES];
 std::vector<int> random_card_array(CARDS_TO_CHOSE);
-Uint32 last_projectiles_times[] = { 0, 0 };
+Uint32 last_projectiles_times[] = { 0, 0, 0 };
 Uint32 last_enemy_time = 0;
 
 void LevelUp(SDL_Renderer* g_renderer, Character& character, int& current_game_state, TTF_Font* font, DynamicText *level_text) {
@@ -80,10 +80,13 @@ void UpdateEnemyAnimation(Enemy* enemy)
 void UpdateProjectileAnimation(Projectile* projectile)
 {
     Uint32 current_time = SDL_GetTicks();
-    if (current_time > projectile->last_frame_time + ANIMATION_SPEED) {
+    if (current_time > projectile->last_frame_time + projectile->animation_speed) {
         projectile->frame = (projectile->frame + 1) % projectile->total_frames;
-        projectile->rect_src.y = 0;
-        projectile->rect_src.x = projectile->frame * projectile->rect_src.w;
+
+        int frames_per_row = projectile->sprite_sheet_width / projectile->rect_src.w;
+        projectile->rect_src.x = (projectile->frame % frames_per_row) * projectile->rect_src.w;
+        projectile->rect_src.y = (projectile->frame / frames_per_row) * projectile->rect_src.h;
+
         projectile->last_frame_time = current_time;
     }
 };
@@ -162,14 +165,12 @@ Enemy* FindClosestEnemy(SDL_Rect player_rect, Enemy enemies[], int max_enemies) 
 
 void FireSingleProjectile(SDL_Rect player_rect, SDL_Texture* texture, int speed, int total_frames,
     SDL_Rect rect_src, SDL_Rect rect_dst,
-    int delay, Uint32& last_projectile_time, Mix_Chunk* sound, projectileType type)
+    int delay, Uint32& last_projectile_time, Mix_Chunk* sound, projectileType type, int animation_speed)
 {
     Uint32 current_time = SDL_GetTicks();
     if (current_time > last_projectile_time + delay) {
         for (int i = 0; i < MAX_PROJECTILES; i++) {
-            if (!projectiles[i].is_active) {
-
-               
+            if (!projectiles[i].is_active) {           
                 
                 projectiles[i].type = type;
                 projectiles[i].texture = texture;
@@ -177,6 +178,8 @@ void FireSingleProjectile(SDL_Rect player_rect, SDL_Texture* texture, int speed,
                 projectiles[i].total_frames = total_frames;
                 projectiles[i].rect_src = rect_src;
                 projectiles[i].rect_dst = rect_dst;
+                projectiles[i].animation_speed = animation_speed;
+                projectiles[i].GetSpriteSheetWidth();
 
                 Enemy* closest_enemy = FindClosestEnemy(player_rect, enemies, MAX_ENEMIES);
                 if (closest_enemy) {
@@ -206,8 +209,27 @@ void FireProjectiles(Character character, SDL_Texture* projectile_textures[], Mi
         character.projectile_delay,
         last_projectiles_times[MAGICBALL],
         projectile_sound,
-        MAGICBALL
+        MAGICBALL, ANIMATION_SPEED
     );
+
+    // Fire Vortex
+
+    int vortex_size = PROJECTILE_VORTEX_HEIGTH_ORIG / 2;
+    FireSingleProjectile(
+        character.rect_dst,
+        projectile_textures[VORTEX],
+        0,                    // Speed
+        54,                     // Total frames
+        { 0, 0, PROJECTILE_VORTEX_WIDTH_ORIG, PROJECTILE_VORTEX_HEIGTH_ORIG },  // rect_src
+        { character.rect_dst.x + character.rect_dst.w / 2 - vortex_size / 2, character.rect_dst.y + character.rect_dst.h / 2 - vortex_size / 2,
+            vortex_size, vortex_size
+        }, // rect_dst
+        character.projectile_delay + 1000,
+        last_projectiles_times[VORTEX],
+        projectile_sound,
+        VORTEX, ANIMATION_SPEED/10
+    );
+
 
     // Fire FlameBall
     if (character.flameball) {
@@ -221,12 +243,12 @@ void FireProjectiles(Character character, SDL_Texture* projectile_textures[], Mi
             character.projectile_delay + (3500 - (500 * character.flameball)),
             last_projectiles_times[FLAMEBALL],
             projectile_sound,
-            FLAMEBALL
+            FLAMEBALL, ANIMATION_SPEED
         );
     }
 }
 
-void UpdateProjectiles(int width_limit, int height_limit, float multiplier)
+void UpdateProjectiles(int width_limit, int height_limit, float multiplier, Character character)
 {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         if (projectiles[i].type == MAGICBALL) {
@@ -235,6 +257,18 @@ void UpdateProjectiles(int width_limit, int height_limit, float multiplier)
         }else if (projectiles[i].type == FLAMEBALL) {
             Enemy* closest_enemy = FindClosestEnemy(projectiles[i].rect_dst, enemies, MAX_ENEMIES);
             if(closest_enemy) UpdateFlameballProjectilePosition(&projectiles[i], closest_enemy->rect_dst);
+        }
+        else if (projectiles[i].type == VORTEX) {
+            int vortex_size = PROJECTILE_VORTEX_HEIGTH_ORIG / 2;
+            
+            projectiles[i].rect_dst.x = character.rect_dst.x + character.rect_dst.w / 2 - vortex_size / 2;
+            projectiles[i].rect_dst.y = character.rect_dst.y + character.rect_dst.h / 2 - vortex_size / 2;
+
+            if (projectiles[i].frame >= projectiles[i].total_frames - 1) {
+                projectiles[i].frame = 0;
+                projectiles[i].deactivate();
+                return;
+            }
         }
 
         projectiles[i].UpdateHitbox();
@@ -247,7 +281,6 @@ void UpdateProjectiles(int width_limit, int height_limit, float multiplier)
 
 void SpawnEnemies(EnemyType enemy_type, SDL_Rect camera, int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave, int width, int height, int frames, float size_percent)
 {
-
     Uint32 current_time = SDL_GetTicks();
     if (current_time > last_enemy_time + ENEMY_DELAY) {
 
@@ -262,7 +295,7 @@ void SpawnEnemies(EnemyType enemy_type, SDL_Rect camera, int bg_width, int bg_he
 
         for (int i = 0; i < MAX_ENEMIES; i++) {
             if (!enemies[i].is_active) {
-                enemies[i] = Enemy{ 6, 1 + (wave - 1), frames,
+                enemies[i] = Enemy{ 6, static_cast<float>(1 + (wave - 1)), frames,
                     { 0, 0, width, height },  //rect_src
                     dst_rect, //dest_dst
                     enemy_texture, //texture
@@ -357,7 +390,7 @@ void ResetGame(int& kill_count, int& wave, Character* character, int bg_width, i
     elapsed_time = (SDL_GetTicks() - start_time) / 1000;
     stopwatch_text->Update(g_renderer, font, std::to_string(elapsed_time), { 255, 255, 255 }, { 0, 0, 0 });
     kill_count_text->Update(g_renderer, font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 }, { 0, 0, 0 });
-    life_text->Update(g_renderer, font, "Lifes: " + std::to_string(character->life), { 255, 255, 255 }, { 0, 0, 0 });
+    life_text->Update(g_renderer, font, "Lifes: " + std::to_string(static_cast<int>(character->life)), { 255, 255, 255 }, { 0, 0, 0 });
     level_text->Update(g_renderer, font, "Level: " + std::to_string(character->level), { 255, 255, 255 }, { 0, 0, 0 });
     for (int i = 0; i < cards.size(); ++i) {
         cards[i].level = 0;
@@ -367,7 +400,7 @@ void ResetGame(int& kill_count, int& wave, Character* character, int bg_width, i
 void SelectCard(std::string card_name, Character& character, TTF_Font* font, DynamicText* life_text)
 {
     if (card_name == "Fire Rate") character.projectile_delay = static_cast<int>(character.projectile_delay * 0.90);
-    else if (card_name == "Heal") { character.life++; life_text->Update(g_renderer, font, "Lifes: " + std::to_string(character.life), { 255, 255, 255 }, { 0, 0, 0 }); }
+    else if (card_name == "Heal") { character.life++; life_text->Update(g_renderer, font, "Lifes: " + std::to_string(static_cast<int>(character.life)), { 255, 255, 255 }, { 0, 0, 0 }); }
     else if (card_name == "Speed") character.speed++;
     else if (card_name == "Damage") character.damage++;
     else if (card_name == "Projectile Speed") character.projectile_speed_multiplier += 0.5;

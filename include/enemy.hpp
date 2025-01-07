@@ -42,7 +42,7 @@ public:
     EnemyType type;
 
     Enemy();
-    Enemy(int spd, int lftime, int t_frms, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active, EnemyType enemy_type);
+    Enemy(int spd, float life, int t_frms, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active, EnemyType enemy_type);
 
     void UpdateHitbox() override;
     void deactivate();

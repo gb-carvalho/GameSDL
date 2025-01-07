@@ -4,18 +4,44 @@
 Projectile projectiles[MAX_PROJECTILES];
 
 Projectile::Projectile()
-    : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), is_active(false), dir_x(0.0f), dir_y(0.0f) {}
+    : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), is_active(false), dir_x(0.0f), dir_y(0.0f), 
+             type(MAGICBALL), total_frames(0), animation_speed(0), sprite_sheet_width(0) {}
 
-Projectile::Projectile(int spd, int lfe, int frm, int lftime, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active, float dx, float dy)
-    : Entity(spd, lfe, frm, lftime, src, dst, tex), is_active(active), dir_x(dx), dir_y(dy) {
+void Projectile::GetSpriteSheetWidth() {
+    int texture_width, texture_height;
+    SDL_QueryTexture(texture, NULL, NULL, &texture_width, &texture_height);
+
+    sprite_sheet_width = texture_width; // Guarda a largura do sprite sheet
 }
 
 void Projectile::UpdateHitbox() {
-    hitbox.w = rect_dst.w;
-    hitbox.h = rect_dst.h;
 
-    hitbox.x = rect_dst.x;
-    hitbox.y = rect_dst.y;
+    if (type == VORTEX) {
+        int half_of_animation = total_frames / 2 - 6;
+
+        if (frame < half_of_animation) {
+            // Crescimento na primeira metade da animação
+            hitbox.w = static_cast<int>(rect_dst.w * ((float)frame / half_of_animation) * 1.10);
+            hitbox.h = static_cast<int>(rect_dst.h * ((float)frame / half_of_animation) * 1.10);
+        }
+        else if (frame < 2 * half_of_animation) {
+            // Diminuição na segunda metade da animação
+            int adjusted_frame = frame - half_of_animation; // Frame relativo à segunda metade
+            hitbox.w = static_cast<int>(rect_dst.w * (1.0f - ((float)adjusted_frame / half_of_animation )));
+            hitbox.h = static_cast<int>(rect_dst.h * (1.0f - ((float)adjusted_frame / half_of_animation )));
+        }
+
+
+        hitbox.x = rect_dst.x + rect_dst.w / 2 - hitbox.w / 2;
+        hitbox.y = rect_dst.y + rect_dst.h / 2 - hitbox.h / 2;
+    }
+    else {
+        hitbox.w = rect_dst.w;
+        hitbox.h = rect_dst.h;
+
+        hitbox.x = rect_dst.x;
+        hitbox.y = rect_dst.y;
+    }
 }
 
 void Projectile::deactivate() {

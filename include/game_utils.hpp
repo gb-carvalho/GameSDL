@@ -13,7 +13,6 @@
 #include "render.hpp"
 #include "collision.hpp"
 
-
 #define ANIMATION_SPEED        160 //Isso deveria ter valor diferente por entidade talvez
 #define FIRST_WAVE_TIME        30
 #define SAVE_FILE              "sdl.dat"
@@ -34,10 +33,10 @@ float CalculateMagnitude(SDL_Rect a, SDL_Rect b);
 void CalculateDirection(SDL_Rect a, SDL_Rect b, Projectile* projectile);
 void FireSingleProjectile(SDL_Rect player_rect, SDL_Texture* texture, int speed, int total_frames,
     SDL_Rect rect_src, SDL_Rect rect_dst,
-    int delay, Uint32& last_projectile_time, Mix_Chunk* sound, projectileType type);
+    int delay, Uint32& last_projectile_time, Mix_Chunk* sound, projectileType type, int animation_speed);
 Enemy* FindClosestEnemy(SDL_Rect player_rect, Enemy enemies[], int max_enemies);
 void FireProjectiles(Character character, SDL_Texture* projectile_textures[], Mix_Chunk* projectile_sound);
-void UpdateProjectiles(int width_limit, int height_limit, float multiplier);
+void UpdateProjectiles(int width_limit, int height_limit, float multiplier, Character character);
 void UpdateFlameballProjectilePosition(Projectile* projectile, SDL_Rect enemy_rect);
 void SpawnEnemies(EnemyType enemy_type, SDL_Rect camera, int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave, int width, int height, int frames, float size_percent);
 std::string TimeFormatted(int time_in_seconds);

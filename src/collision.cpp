@@ -26,13 +26,19 @@ bool CheckCollision(SDL_Rect a, SDL_Rect b, SDL_Rect camera)
     return collision;
 }
 
-void CheckProjectileCollisionWithEnemy(SDL_Renderer* g_renderer, Character& character, SDL_Rect enemy_rect, int& enemy_life, bool& active, SDL_Rect camera, int& kill_count,
+void CheckProjectileCollisionWithEnemy(SDL_Renderer* g_renderer, Character& character, SDL_Rect enemy_rect, float& enemy_life, bool& active, SDL_Rect camera, int& kill_count,
     TTF_Font* font, int& current_game_state, DynamicText *kill_count_text, DynamicText *level_text, Mix_Chunk* enemy_damage_sound)
 {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         if (projectiles[i].is_active && CheckCollision(projectiles[i].hitbox, enemy_rect, camera)) {
-            projectiles[i].deactivate();
-            enemy_life -= character.damage;
+            if (projectiles[i].type == VORTEX)
+            {
+                enemy_life -= character.damage / 4.0f;
+            }
+            else {
+                enemy_life -= character.damage;
+                projectiles[i].deactivate();
+            }
             Mix_PlayChannel(-1, enemy_damage_sound, 0);
             if (enemy_life <= 0) {
                 kill_count++;
