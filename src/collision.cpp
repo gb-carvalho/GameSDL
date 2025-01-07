@@ -18,8 +18,9 @@ bool CheckCollision(SDL_Rect a, SDL_Rect b, SDL_Rect camera)
     };
 
     //DEBUG//
-    //SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255); // Vermelho
+    //SDL_SetRenderDrawColor(g_renderer, 0, 255, 0, 255);
     //SDL_RenderDrawRect(g_renderer, &adjusted_a);
+    //SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255);
     //SDL_RenderDrawRect(g_renderer, &adjusted_b);
 
     return collision;

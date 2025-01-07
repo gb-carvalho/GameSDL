@@ -32,14 +32,17 @@
 #define ENEMY_ANDROMALIUS_HEIGHT 88
 #define ENEMY_ANDROMALIUS_FRAMES 8
 
+enum EnemyType { MAGE, MAGE2, MAGE3, WOLF, BAT, GOLEM, ANDROMALIUS };
+
 class Enemy : public Entity {
 public:
     bool is_active;
     int total_frames;
     SDL_RendererFlip flip;
+    EnemyType type;
 
     Enemy();
-    Enemy(int spd, int lftime, int t_frms, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active);
+    Enemy(int spd, int lftime, int t_frms, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active, EnemyType enemy_type);
 
     void UpdateHitbox() override;
     void deactivate();

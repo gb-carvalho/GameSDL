@@ -245,19 +245,20 @@ void UpdateProjectiles(int width_limit, int height_limit, float multiplier)
     }
 }
 
-void SpawnEnemies(SDL_Rect camera, int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave, int width, int height, int frames)
+void SpawnEnemies(EnemyType enemy_type, SDL_Rect camera, int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave, int width, int height, int frames, float size_percent)
 {
 
     Uint32 current_time = SDL_GetTicks();
     if (current_time > last_enemy_time + ENEMY_DELAY) {
 
         int spawn_x = rand() % bg_width;
-        SDL_Rect dst_rect = { spawn_x, rand() % bg_height, width, height };
+        SDL_Rect dst_rect = { spawn_x, rand() % bg_height, static_cast<int>(width * (1 * size_percent / 100)), static_cast<int>(height * (1 * size_percent / 100)) };
 
         if (CheckCollision(camera, dst_rect, camera)) {
             if (dst_rect.x > camera.x + (camera.w / 2)) dst_rect.x = camera.x + camera.w;
             else dst_rect.x = camera.x;
         }
+
 
         for (int i = 0; i < MAX_ENEMIES; i++) {
             if (!enemies[i].is_active) {
@@ -265,7 +266,7 @@ void SpawnEnemies(SDL_Rect camera, int bg_width, int bg_height, SDL_Texture* ene
                     { 0, 0, width, height },  //rect_src
                     dst_rect, //dest_dst
                     enemy_texture, //texture
-                    true };
+                    true, enemy_type};
 
                 last_enemy_time = current_time;
                 break;

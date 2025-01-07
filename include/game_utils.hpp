@@ -39,7 +39,7 @@ Enemy* FindClosestEnemy(SDL_Rect player_rect, Enemy enemies[], int max_enemies);
 void FireProjectiles(Character character, SDL_Texture* projectile_textures[], Mix_Chunk* projectile_sound);
 void UpdateProjectiles(int width_limit, int height_limit, float multiplier);
 void UpdateFlameballProjectilePosition(Projectile* projectile, SDL_Rect enemy_rect);
-void SpawnEnemies(SDL_Rect camera, int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave, int width, int height, int frames);
+void SpawnEnemies(EnemyType enemy_type, SDL_Rect camera, int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave, int width, int height, int frames, float size_percent);
 std::string TimeFormatted(int time_in_seconds);
 void ResetGame(int& kill_count, int& wave, Character* character, int bg_width, int bg_height, int& start_time, 
                int& elapsed_time, TTF_Font* font, int& total_pause_duration,
