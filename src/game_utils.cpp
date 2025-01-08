@@ -213,23 +213,23 @@ void FireProjectiles(Character character, SDL_Texture* projectile_textures[], Mi
     );
 
     // Fire Vortex
-
-    int vortex_size = PROJECTILE_VORTEX_HEIGTH_ORIG / 2;
-    FireSingleProjectile(
-        character.rect_dst,
-        projectile_textures[VORTEX],
-        0,                    // Speed
-        54,                     // Total frames
-        { 0, 0, PROJECTILE_VORTEX_WIDTH_ORIG, PROJECTILE_VORTEX_HEIGTH_ORIG },  // rect_src
-        { character.rect_dst.x + character.rect_dst.w / 2 - vortex_size / 2, character.rect_dst.y + character.rect_dst.h / 2 - vortex_size / 2,
-            vortex_size, vortex_size
-        }, // rect_dst
-        character.projectile_delay + 1000,
-        last_projectiles_times[VORTEX],
-        projectile_sound,
-        VORTEX, ANIMATION_SPEED/10
-    );
-
+    if (character.vortex) {
+        int vortex_size = PROJECTILE_VORTEX_HEIGTH_ORIG / 2 + (PROJECTILE_VORTEX_HEIGTH_ORIG/2 * character.vortex / 5);
+        FireSingleProjectile(
+            character.rect_dst,
+            projectile_textures[VORTEX],
+            0,                    // Speed
+            54,                   // Total frames
+            { 0, 0, PROJECTILE_VORTEX_WIDTH_ORIG, PROJECTILE_VORTEX_HEIGTH_ORIG },  // rect_src
+            { character.rect_dst.x + character.rect_dst.w / 2 - vortex_size / 2, character.rect_dst.y + character.rect_dst.h / 2 - vortex_size / 2,
+                vortex_size, vortex_size
+            }, // rect_dst
+            character.projectile_delay + (3500 - (500 * character.vortex)),
+            last_projectiles_times[VORTEX],
+            projectile_sound,
+            VORTEX, ANIMATION_SPEED / 10
+        );
+    }
 
     // Fire FlameBall
     if (character.flameball) {
@@ -259,7 +259,7 @@ void UpdateProjectiles(int width_limit, int height_limit, float multiplier, Char
             if(closest_enemy) UpdateFlameballProjectilePosition(&projectiles[i], closest_enemy->rect_dst);
         }
         else if (projectiles[i].type == VORTEX) {
-            int vortex_size = PROJECTILE_VORTEX_HEIGTH_ORIG / 2;
+            int vortex_size = PROJECTILE_VORTEX_HEIGTH_ORIG / 2 + (PROJECTILE_VORTEX_HEIGTH_ORIG / 2 * character.vortex / 5);
             
             projectiles[i].rect_dst.x = character.rect_dst.x + character.rect_dst.w / 2 - vortex_size / 2;
             projectiles[i].rect_dst.y = character.rect_dst.y + character.rect_dst.h / 2 - vortex_size / 2;
@@ -291,7 +291,6 @@ void SpawnEnemies(EnemyType enemy_type, SDL_Rect camera, int bg_width, int bg_he
             if (dst_rect.x > camera.x + (camera.w / 2)) dst_rect.x = camera.x + camera.w;
             else dst_rect.x = camera.x;
         }
-
 
         for (int i = 0; i < MAX_ENEMIES; i++) {
             if (!enemies[i].is_active) {
@@ -399,13 +398,14 @@ void ResetGame(int& kill_count, int& wave, Character* character, int bg_width, i
 
 void SelectCard(std::string card_name, Character& character, TTF_Font* font, DynamicText* life_text)
 {
-    if (card_name == "Fire Rate") character.projectile_delay = static_cast<int>(character.projectile_delay * 0.90);
-    else if (card_name == "Heal") { character.life++; life_text->Update(g_renderer, font, "Lifes: " + std::to_string(static_cast<int>(character.life)), { 255, 255, 255 }, { 0, 0, 0 }); }
-    else if (card_name == "Speed") character.speed++;
-    else if (card_name == "Damage") character.damage++;
+    if      (card_name == "Fire Rate")  character.projectile_delay = static_cast<int>(character.projectile_delay * 0.90);
+    else if (card_name == "Heal") {     character.life++; life_text->Update(g_renderer, font, "Lifes: " + std::to_string(static_cast<int>(character.life)), { 255, 255, 255 }, { 0, 0, 0 }); }
+    else if (card_name == "Speed")      character.speed++;
+    else if (card_name == "Damage")     character.damage++;
+    else if (card_name == "EXP")        character.exp_multiplier += 0.5;
+    else if (card_name == "Flameball")  character.flameball += 1;
+    else if (card_name == "Vortex")     character.vortex += 1;
     else if (card_name == "Projectile Speed") character.projectile_speed_multiplier += 0.5;
-    else if (card_name == "EXP") character.exp_multiplier += 0.5;
-    else if (card_name == "Flameball") character.flameball += 1;  
 }
 
 void DamageColor(SDL_Texture* texture, Uint32 last_damage_time, bool& took_damage)
