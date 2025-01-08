@@ -227,7 +227,6 @@ int main(int argc, char* argv[])
 
             RenderProjectiles(camera);
             SDL_RenderCopy(g_renderer, character.texture, &character.rect_src, &player_render_rect);
-
             break;
         }
         case CARD_SELECTOR: {

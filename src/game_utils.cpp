@@ -144,6 +144,7 @@ void CalculateDirection(SDL_Rect a, SDL_Rect b, Projectile* projectile)
         projectile->dir_x = 1;
         projectile->dir_y = 1;
     }
+
 }
 
 Enemy* FindClosestEnemy(SDL_Rect player_rect, Enemy enemies[], int max_enemies) {
@@ -183,7 +184,7 @@ void FireSingleProjectile(SDL_Rect player_rect, SDL_Texture* texture, int speed,
 
                 Enemy* closest_enemy = FindClosestEnemy(player_rect, enemies, MAX_ENEMIES);
                 if (closest_enemy) {
-                    if (type != FLAMEBALL) CalculateDirection(player_rect, closest_enemy->rect_dst, &projectiles[i]);
+                    if (type == MAGICBALL) CalculateDirection(player_rect, closest_enemy->rect_dst, &projectiles[i]);
                     projectiles[i].is_active = true;
                     Mix_PlayChannel(-1, sound, 0);
                 }
@@ -251,30 +252,33 @@ void FireProjectiles(Character character, SDL_Texture* projectile_textures[], Mi
 void UpdateProjectiles(int width_limit, int height_limit, float multiplier, Character character)
 {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
-        if (projectiles[i].type == MAGICBALL) {
-            projectiles[i].rect_dst.x += static_cast<int>(projectiles[i].dir_x * projectiles[i].speed * multiplier);
-            projectiles[i].rect_dst.y += static_cast<int>(projectiles[i].dir_y * projectiles[i].speed * multiplier);
-        }else if (projectiles[i].type == FLAMEBALL) {
-            Enemy* closest_enemy = FindClosestEnemy(projectiles[i].rect_dst, enemies, MAX_ENEMIES);
-            if(closest_enemy) UpdateFlameballProjectilePosition(&projectiles[i], closest_enemy->rect_dst);
-        }
-        else if (projectiles[i].type == VORTEX) {
-            int vortex_size = PROJECTILE_VORTEX_HEIGTH_ORIG / 2 + (PROJECTILE_VORTEX_HEIGTH_ORIG / 2 * character.vortex / 5);
-            
-            projectiles[i].rect_dst.x = character.rect_dst.x + character.rect_dst.w / 2 - vortex_size / 2;
-            projectiles[i].rect_dst.y = character.rect_dst.y + character.rect_dst.h / 2 - vortex_size / 2;
-
-            if (projectiles[i].frame >= projectiles[i].total_frames - 1) {
-                projectiles[i].frame = 0;
-                projectiles[i].deactivate();
-                return;
+        if (projectiles[i].is_active) {
+            if (projectiles[i].type == MAGICBALL) {
+                projectiles[i].rect_dst.x += static_cast<int>(projectiles[i].dir_x * projectiles[i].speed * multiplier);
+                projectiles[i].rect_dst.y += static_cast<int>(projectiles[i].dir_y * projectiles[i].speed * multiplier);
             }
-        }
+            else if (projectiles[i].type == FLAMEBALL) {
+                Enemy* closest_enemy = FindClosestEnemy(projectiles[i].rect_dst, enemies, MAX_ENEMIES);
+                if (closest_enemy) UpdateFlameballProjectilePosition(&projectiles[i], closest_enemy->rect_dst);
+            }
+            else if (projectiles[i].type == VORTEX) {
+                int vortex_size = PROJECTILE_VORTEX_HEIGTH_ORIG / 2 + (PROJECTILE_VORTEX_HEIGTH_ORIG / 2 * character.vortex / 5);
 
-        projectiles[i].UpdateHitbox();
-        if (projectiles[i].rect_dst.x < 0 || projectiles[i].rect_dst.x > width_limit ||
-            projectiles[i].rect_dst.y < 0 || projectiles[i].rect_dst.y > height_limit) {
-            projectiles[i].is_active = false;
+                projectiles[i].rect_dst.x = character.rect_dst.x + character.rect_dst.w / 2 - vortex_size / 2;
+                projectiles[i].rect_dst.y = character.rect_dst.y + character.rect_dst.h / 2 - vortex_size / 2;
+
+                if (projectiles[i].frame >= projectiles[i].total_frames - 1) {
+                    projectiles[i].frame = 0;
+                    projectiles[i].deactivate();
+                    return;
+                }
+            }
+
+            projectiles[i].UpdateHitbox();
+            if (projectiles[i].rect_dst.x < 0 || projectiles[i].rect_dst.x > width_limit ||
+                projectiles[i].rect_dst.y < 0 || projectiles[i].rect_dst.y > height_limit) {
+                projectiles[i].is_active = false;
+            }
         }
     }
 }
