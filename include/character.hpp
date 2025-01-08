@@ -18,7 +18,7 @@ class Character : public Entity {
 public:
     characterState current_state;
     Uint32 last_damage_time;
-    int level, level_to_update, projectile_delay, damage, flameball, vortex;
+    int level, level_to_update, projectile_delay, damage, flameball, vortex, flamepillar;
     float exp, pos_y, pos_x, projectile_speed_multiplier, exp_multiplier;
     bool took_damage;
 

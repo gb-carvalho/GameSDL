@@ -2,7 +2,7 @@
 
 Enemy enemies[MAX_ENEMIES];
 std::vector<int> random_card_array(CARDS_TO_CHOSE);
-Uint32 last_projectiles_times[] = { 0, 0, 0 };
+Uint32 last_projectiles_times[] = { 0, 0, 0, 0 };
 Uint32 last_enemy_time = 0;
 
 void LevelUp(SDL_Renderer* g_renderer, Character& character, int& current_game_state, TTF_Font* font, DynamicText *level_text) {
@@ -24,7 +24,6 @@ void UpdateEnemyPosition(Enemy* enemy, SDL_Rect player_rect) {
     float magnitude = sqrt(diff_x * diff_x + diff_y * diff_y);
 
     // Verifica se a magnitude é maior que zero antes de normalizar
-
     if (magnitude > 20) {
         // Normaliza a direção e move o inimigo
         enemy->rect_dst.x += static_cast<int>((diff_x / magnitude) * enemy->speed);
@@ -180,6 +179,7 @@ void FireSingleProjectile(SDL_Rect player_rect, SDL_Texture* texture, int speed,
                 projectiles[i].rect_src = rect_src;
                 projectiles[i].rect_dst = rect_dst;
                 projectiles[i].animation_speed = animation_speed;
+                projectiles[i].frames_active = 0;
                 projectiles[i].GetSpriteSheetWidth();
 
                 Enemy* closest_enemy = FindClosestEnemy(player_rect, enemies, MAX_ENEMIES);
@@ -197,7 +197,7 @@ void FireSingleProjectile(SDL_Rect player_rect, SDL_Texture* texture, int speed,
     }
 }
 
-void FireProjectiles(Character character, SDL_Texture* projectile_textures[], Mix_Chunk* projectile_sound)
+void FireProjectiles(Character character, SDL_Rect camera, SDL_Texture* projectile_textures[], Mix_Chunk* projectile_sound)
 {
     // Fire MagicBall
     FireSingleProjectile(
@@ -212,6 +212,24 @@ void FireProjectiles(Character character, SDL_Texture* projectile_textures[], Mi
         projectile_sound,
         MAGICBALL, ANIMATION_SPEED
     );
+
+    // Fire flame pillar
+    if (character.flamepillar) {
+        FireSingleProjectile(
+            character.rect_dst,
+            projectile_textures[FLAMEPILLAR],
+            0,                    // Speed
+            61,                   // Total frames
+            { 0, 0, PROJECTILE_FLAMEPILLAR_WIDTH_ORIG, PROJECTILE_FLAMEPILLAR_HEIGTH_ORIG },  // rect_src
+            { camera.x + rand() % 1920, camera.y + rand() % 1080,
+                PROJECTILE_FLAMEPILLAR_WIDTH_ORIG + 20, PROJECTILE_FLAMEPILLAR_WIDTH_ORIG + 20
+            }, // rect_dst
+            character.projectile_delay + (2000 - (500 * character.flamepillar)),
+            last_projectiles_times[FLAMEPILLAR],
+            projectile_sound,
+            FLAMEPILLAR, ANIMATION_SPEED / 5
+        );
+    }
 
     // Fire Vortex
     if (character.vortex) {
@@ -241,7 +259,7 @@ void FireProjectiles(Character character, SDL_Texture* projectile_textures[], Mi
             4,                      // Total frames
             { 0, 0, PROJECTILE_FLAMEBALL_WIDTH_ORIG, PROJECTILE_FLAMEBALL_HEIGTH_ORIG },  // rect_src
             { character.rect_dst.x + character.rect_dst.w / 4, character.rect_dst.y + character.rect_dst.h / 4, PROJECTILE_FLAMEBALL_WIDTH_ORIG, PROJECTILE_FLAMEBALL_HEIGTH_ORIG }, // rect_dst
-            character.projectile_delay + (3500 - (500 * character.flameball)),
+            character.projectile_delay + (2500 - (500 * character.flameball)),
             last_projectiles_times[FLAMEBALL],
             projectile_sound,
             FLAMEBALL, ANIMATION_SPEED
@@ -253,15 +271,14 @@ void UpdateProjectiles(int width_limit, int height_limit, float multiplier, Char
 {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         if (projectiles[i].is_active) {
-            if (projectiles[i].type == MAGICBALL) {
-                projectiles[i].rect_dst.x += static_cast<int>(projectiles[i].dir_x * projectiles[i].speed * multiplier);
-                projectiles[i].rect_dst.y += static_cast<int>(projectiles[i].dir_y * projectiles[i].speed * multiplier);
-            }
-            else if (projectiles[i].type == FLAMEBALL) {
+
+            switch (projectiles[i].type) {
+            case FLAMEBALL: {
                 Enemy* closest_enemy = FindClosestEnemy(projectiles[i].rect_dst, enemies, MAX_ENEMIES);
                 if (closest_enemy) UpdateFlameballProjectilePosition(&projectiles[i], closest_enemy->rect_dst);
+                break;
             }
-            else if (projectiles[i].type == VORTEX) {
+            case VORTEX: {
                 int vortex_size = PROJECTILE_VORTEX_HEIGTH_ORIG / 2 + (PROJECTILE_VORTEX_HEIGTH_ORIG / 2 * character.vortex / 5);
 
                 projectiles[i].rect_dst.x = character.rect_dst.x + character.rect_dst.w / 2 - vortex_size / 2;
@@ -272,6 +289,14 @@ void UpdateProjectiles(int width_limit, int height_limit, float multiplier, Char
                     projectiles[i].deactivate();
                     return;
                 }
+                break;
+            }
+            case FLAMEPILLAR:
+                if (projectiles[i].frames_active > 200 + (50 * character.flamepillar)) projectiles[i].deactivate();
+            case MAGICBALL:
+                projectiles[i].rect_dst.x += static_cast<int>(projectiles[i].dir_x * projectiles[i].speed * multiplier);
+                projectiles[i].rect_dst.y += static_cast<int>(projectiles[i].dir_y * projectiles[i].speed * multiplier);
+                break;
             }
 
             projectiles[i].UpdateHitbox();
@@ -409,6 +434,7 @@ void SelectCard(std::string card_name, Character& character, TTF_Font* font, Dyn
     else if (card_name == "EXP")        character.exp_multiplier += 0.5;
     else if (card_name == "Flameball")  character.flameball += 1;
     else if (card_name == "Vortex")     character.vortex += 1;
+    else if (card_name == "Flame Pillar")     character.flamepillar += 1;
     else if (card_name == "Projectile Speed") character.projectile_speed_multiplier += 0.5;
 }
 

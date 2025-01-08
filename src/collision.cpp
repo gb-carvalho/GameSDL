@@ -18,8 +18,8 @@ bool CheckCollision(SDL_Rect a, SDL_Rect b, SDL_Rect camera)
     };
 
     //DEBUG//
-    //SDL_SetRenderDrawColor(g_renderer, 0, 255, 0, 255);
-    //SDL_RenderDrawRect(g_renderer, &adjusted_a);
+    SDL_SetRenderDrawColor(g_renderer, 0, 255, 0, 255);
+    SDL_RenderDrawRect(g_renderer, &adjusted_a);
     //SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 255);
     //SDL_RenderDrawRect(g_renderer, &adjusted_b);
 
@@ -31,8 +31,7 @@ void CheckProjectileCollisionWithEnemy(SDL_Renderer* g_renderer, Character& char
 {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         if (projectiles[i].is_active && CheckCollision(projectiles[i].hitbox, enemy_rect, camera)) {
-            if (projectiles[i].type == VORTEX)
-            {
+            if (projectiles[i].type == VORTEX || projectiles[i].type == FLAMEPILLAR) {
                 enemy_life -= character.damage / 4.0f;
             }
             else {

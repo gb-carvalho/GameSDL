@@ -62,7 +62,8 @@ int main(int argc, char* argv[])
     SDL_Texture* projectile_texture = CreateTextureImg("Assets/mage-bullet-13x13.png");
     SDL_Texture* projectile_flameball_texture = CreateTextureImg("Assets/flameball-32x32.png");
     SDL_Texture* projectile_vortex_texture = CreateTextureImg("Assets/Effect_TheVortex_1_429x429.png");
-    SDL_Texture* projectile_textures[] = { projectile_texture, projectile_flameball_texture, projectile_vortex_texture };
+    SDL_Texture* projectile_flame_pillar_texture = CreateTextureImg("Assets/flame_pillar.png");
+    SDL_Texture* projectile_textures[] = { projectile_texture, projectile_flameball_texture, projectile_vortex_texture, projectile_flame_pillar_texture };
 
     SDL_Texture* mage_texture = CreateTextureImg("Assets/mage.png");
     SDL_Texture* mage2_texture = CreateTextureImg("Assets/mage2.png");
@@ -178,7 +179,7 @@ int main(int argc, char* argv[])
             else if (wave_type == 6) SpawnEnemies(MAGE2, camera, bg_width, bg_height, mage2_texture, wave, ENEMY_MAGE2_WIDTH, ENEMY_MAGE2_HEIGHT, ENEMY_MAGE2_FRAMES, 100);
             else if (wave_type == 7) SpawnEnemies(MAGE3, camera, bg_width, bg_height, mage3_texture, wave, ENEMY_MAGE3_WIDTH, ENEMY_MAGE3_HEIGHT, ENEMY_MAGE3_FRAMES, 100);
 
-            FireProjectiles(character, projectile_textures, projectile_sound);
+            FireProjectiles(character, camera, projectile_textures, projectile_sound);
             UpdateProjectiles(bg_width, bg_height, character.projectile_speed_multiplier, character);
 
             for (int i = 0; i < MAX_ENEMIES; i++) {
@@ -359,6 +360,7 @@ int main(int argc, char* argv[])
                 last_projectiles_times[MAGICBALL] = SDL_GetTicks();
                 last_projectiles_times[FLAMEBALL] = SDL_GetTicks();
                 last_projectiles_times[VORTEX] = SDL_GetTicks();
+                last_projectiles_times[FLAMEPILLAR] = SDL_GetTicks();
                 current_game_state = PLAYING;
             }
             break;

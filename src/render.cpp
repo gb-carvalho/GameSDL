@@ -13,7 +13,24 @@ void RenderProjectiles(SDL_Rect camera)
                 projectiles[i].rect_dst.w,
                 projectiles[i].rect_dst.h
             };
+
+            if (projectiles[i].type == FLAMEPILLAR) {
+                const int spawn_duration = 15; // Duração do efeito de spawn, em frames.
+                int frames_active = projectiles[i].frames_active; // Contador de frames do projétil.
+
+                if (frames_active < spawn_duration) {
+                    float progress = (float)frames_active / spawn_duration;
+
+                    // Faz o projétil surgir de baixo ajustando sua altura e posição Y.
+                    render_rect.h = (int)(projectiles[i].rect_dst.h * progress);
+                    render_rect.y += projectiles[i].rect_dst.h - render_rect.h;
+                }
+            }
+
             SDL_RenderCopy(g_renderer, projectiles[i].texture, &projectiles[i].rect_src, &render_rect);
+
+            projectiles[i].frames_active++;
+
         }
     }
 }
