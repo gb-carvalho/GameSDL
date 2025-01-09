@@ -17,7 +17,7 @@ void Character::UpdateHitbox(){
 
 void Character::reset(SDL_Rect rect_dst_new) {
     life     = 3;
-    damage   = 1;
+    damage   = 0;
     frame    = 0;   
     exp      = 0;
     level    = 1;

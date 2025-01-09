@@ -2,7 +2,7 @@
 #include "entity.hpp"
 
 #define ENEMY_DELAY      850
-#define MAX_ENEMIES      20
+#define MAX_ENEMIES      75
 
 #define ENEMY_MAGE_WIDTH  85
 #define ENEMY_MAGE_HEIGHT 94
