@@ -72,7 +72,7 @@ Mix_Music* InitMusic(const char* music_path, int loops)
         SDL_Quit();
         return nullptr;
     }
-    Mix_VolumeMusic(MIX_MAX_VOLUME / 30);
+    Mix_VolumeMusic(MIX_MAX_VOLUME / 8);
     Mix_PlayMusic(music, loops);
 
     return music;

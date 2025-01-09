@@ -47,7 +47,7 @@ int main(int argc, char* argv[])
     Mix_Chunk* projectile_sound = InitSoundEffect("Assets/projectile.wav", MIX_MAX_VOLUME / 5);
     Mix_Chunk* fire1_sound = InitSoundEffect("Assets/fire1.wav", MIX_MAX_VOLUME / 8);
     Mix_Chunk* fire2_sound = InitSoundEffect("Assets/fire2.wav", MIX_MAX_VOLUME / 8);
-    Mix_Chunk* vortex_sound = InitSoundEffect("Assets/whoosh1.wav", MIX_MAX_VOLUME / 12);
+    Mix_Chunk* vortex_sound = InitSoundEffect("Assets/whoosh1.wav", MIX_MAX_VOLUME / 14);
     Mix_Chunk* projetiles_sound[] = {projectile_sound, fire1_sound, vortex_sound, fire2_sound };
 
 
