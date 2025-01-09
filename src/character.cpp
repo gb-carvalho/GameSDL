@@ -1,6 +1,6 @@
 #include "character.hpp"
 
-Character::Character(int spd, float lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, characterState state, int prjctle_delay)
+Character::Character(float spd, float lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, characterState state, int prjctle_delay)
     : Entity(spd, lfe, 0, 0, src, dst, tex), current_state(state), exp(0), level(0), projectile_delay(prjctle_delay), 
     last_damage_time(0), took_damage(false), level_to_update(0), damage(1), pos_x(static_cast<float>(dst.x)), pos_y(static_cast<float>(dst.y)),
     projectile_speed_multiplier(1), exp_multiplier(1){
@@ -17,7 +17,7 @@ void Character::UpdateHitbox(){
 
 void Character::reset(SDL_Rect rect_dst_new) {
     life     = 3;
-    damage   = 0;
+    damage   = 1;
     frame    = 0;   
     exp      = 0;
     level    = 1;

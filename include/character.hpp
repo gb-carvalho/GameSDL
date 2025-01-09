@@ -22,7 +22,7 @@ public:
     float exp, pos_y, pos_x, projectile_speed_multiplier, exp_multiplier;
     bool took_damage;
 
-    Character(int spd, float lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, characterState state, int prjctle_delay);
+    Character(float spd, float lfe, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, characterState state, int prjctle_delay);
 
     void UpdateHitbox() override;
     void reset(SDL_Rect rect_dst_new);

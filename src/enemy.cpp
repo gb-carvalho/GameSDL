@@ -2,7 +2,7 @@
 
 Enemy::Enemy() : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), is_active(false), total_frames(0), flip(SDL_FLIP_NONE), type(MAGE) {}
 
-Enemy::Enemy(int spd, float life, int t_frms, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active, EnemyType enemy_type)
+Enemy::Enemy(float spd, float life, int t_frms, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active, EnemyType enemy_type)
     : Entity(spd, life, 0, 0, src, dst, tex), is_active(active), total_frames(t_frms), flip(SDL_FLIP_NONE), type(enemy_type) {
     UpdateHitbox();
 }

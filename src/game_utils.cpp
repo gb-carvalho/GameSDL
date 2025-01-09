@@ -163,7 +163,7 @@ Enemy* FindClosestEnemy(SDL_Rect player_rect, Enemy enemies[], int max_enemies) 
     return closest_enemy;
 }
 
-void FireSingleProjectile(SDL_Rect player_rect, SDL_Texture* texture, int speed, int total_frames,
+void FireSingleProjectile(SDL_Rect player_rect, SDL_Texture* texture, float speed, int total_frames,
     SDL_Rect rect_src, SDL_Rect rect_dst,
     int delay, Uint32& last_projectile_time, Mix_Chunk* sound, projectileType type, int animation_speed)
 {
