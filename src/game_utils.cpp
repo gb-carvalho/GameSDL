@@ -180,6 +180,7 @@ void FireSingleProjectile(SDL_Rect player_rect, SDL_Texture* texture, float spee
                 projectiles[i].rect_dst = rect_dst;
                 projectiles[i].animation_speed = animation_speed;
                 projectiles[i].frames_active = 0;
+                projectiles[i].frame = 0;
                 projectiles[i].GetSpriteSheetWidth();
 
                 Enemy* closest_enemy = FindClosestEnemy(player_rect, enemies, MAX_ENEMIES);
@@ -285,7 +286,6 @@ void UpdateProjectiles(int width_limit, int height_limit, float multiplier, Char
                 projectiles[i].rect_dst.y = character.rect_dst.y + character.rect_dst.h / 2 - vortex_size / 2;
 
                 if (projectiles[i].frame >= projectiles[i].total_frames - 1) {
-                    projectiles[i].frame = 0;
                     projectiles[i].deactivate();
                     return;
                 }
@@ -296,14 +296,17 @@ void UpdateProjectiles(int width_limit, int height_limit, float multiplier, Char
             case MAGICBALL:
                 projectiles[i].rect_dst.x += static_cast<int>(projectiles[i].dir_x * projectiles[i].speed * multiplier);
                 projectiles[i].rect_dst.y += static_cast<int>(projectiles[i].dir_y * projectiles[i].speed * multiplier);
+
+                if (projectiles[i].rect_dst.x < 0 || projectiles[i].rect_dst.x > width_limit ||
+                    projectiles[i].rect_dst.y < 0 || projectiles[i].rect_dst.y > height_limit) {
+                    projectiles[i].is_active = false;
+                }
+
                 break;
             }
 
             projectiles[i].UpdateHitbox();
-            if (projectiles[i].rect_dst.x < 0 || projectiles[i].rect_dst.x > width_limit ||
-                projectiles[i].rect_dst.y < 0 || projectiles[i].rect_dst.y > height_limit) {
-                projectiles[i].is_active = false;
-            }
+
         }
     }
 }
