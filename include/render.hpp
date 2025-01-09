@@ -2,6 +2,7 @@
 #include <SDL.h>
 #include <SDL_ttf.h>
 #include <SDL_image.h>
+#include <algorithm>
 
 #include "character.hpp"
 #include "projectile.hpp"
