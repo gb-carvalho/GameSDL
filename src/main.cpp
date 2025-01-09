@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
     bool running = true;
     int current_game_state = TITLE_SCREEN;
     int kill_count, start_time, elapsed_time, wave, time_left, pause_start_time = 0, total_pause_duration = 0;
-    bool key_pressed = false, skip = false, allLevelsAreFive;
+    bool key_pressed = false, skip = false, new_record = false, allLevelsAreFive;
     DynamicText life_text, level_text, title_text, pause_text, kill_count_text, stopwatch_text;
 
     while (running) {
@@ -319,6 +319,7 @@ int main(int argc, char* argv[])
 
             int kill_count_save_file, wave_save_file;
             LoadGame("sdl.dat", kill_count_save_file, wave_save_file);
+            if (kill_count > kill_count_save_file || wave > wave_save_file) new_record = true;
 
             SDL_Rect dark_rect_dst = { 0, 0, screen_width, screen_height };
             SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 2);
@@ -331,7 +332,7 @@ int main(int argc, char* argv[])
             title_text.Update(g_renderer, small_font, "Press ESC to go to the title screen.", { 255, 255, 255 }, { 0, 0, 0 });
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, static_cast<int>(screen_height / 1.5 - title_text.rect.h / 2 + 120), true);
 
-            if (kill_count > kill_count_save_file || wave > wave_save_file) {
+            if (new_record) {
                 title_text.Update(g_renderer, small_font, "Congratulations! You've set a new record!", { 255, 50, 50 }, { 0, 0, 0 });
                 title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, static_cast<int>(screen_height / 1.5 - title_text.rect.h / 2 + 150), true);
             }
@@ -341,6 +342,7 @@ int main(int argc, char* argv[])
             if (keyState[SDL_SCANCODE_RETURN] || keyState[SDL_SCANCODE_ESCAPE]) {
                 ResetGame(kill_count, wave, &character, bg_width, bg_height, start_time, elapsed_time, small_font, total_pause_duration,
                           &stopwatch_text, &life_text, &kill_count_text, &level_text);
+                new_record = false;
                 if (keyState[SDL_SCANCODE_ESCAPE]) current_game_state = TITLE_SCREEN;
                 else if (keyState[SDL_SCANCODE_RETURN]) current_game_state = PLAYING;
             }
