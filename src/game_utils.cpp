@@ -197,7 +197,7 @@ void FireSingleProjectile(SDL_Rect player_rect, SDL_Texture* texture, float spee
     }
 }
 
-void FireProjectiles(Character character, SDL_Rect camera, SDL_Texture* projectile_textures[], Mix_Chunk* projectile_sound)
+void FireProjectiles(Character character, SDL_Rect camera, SDL_Texture* projectile_textures[], Mix_Chunk* projectile_sound[])
 {
     // Fire MagicBall
     FireSingleProjectile(
@@ -209,7 +209,7 @@ void FireProjectiles(Character character, SDL_Rect camera, SDL_Texture* projecti
         { character.rect_dst.x + character.rect_dst.w / 4, character.rect_dst.y + character.rect_dst.h / 2, 25, 25 }, // rect_dst
         character.projectile_delay,
         last_projectiles_times[MAGICBALL],
-        projectile_sound,
+        projectile_sound[MAGICBALL],
         MAGICBALL, ANIMATION_SPEED
     );
 
@@ -226,7 +226,7 @@ void FireProjectiles(Character character, SDL_Rect camera, SDL_Texture* projecti
             }, // rect_dst
             character.projectile_delay + (2000 - (500 * character.flamepillar)),
             last_projectiles_times[FLAMEPILLAR],
-            projectile_sound,
+            projectile_sound[FLAMEPILLAR],
             FLAMEPILLAR, ANIMATION_SPEED / 5
         );
     }
@@ -245,7 +245,7 @@ void FireProjectiles(Character character, SDL_Rect camera, SDL_Texture* projecti
             }, // rect_dst
             character.projectile_delay + (3500 - (500 * character.vortex)),
             last_projectiles_times[VORTEX],
-            projectile_sound,
+            projectile_sound[VORTEX],
             VORTEX, ANIMATION_SPEED / 10
         );
     }
@@ -261,7 +261,7 @@ void FireProjectiles(Character character, SDL_Rect camera, SDL_Texture* projecti
             { character.rect_dst.x + character.rect_dst.w / 4, character.rect_dst.y + character.rect_dst.h / 4, PROJECTILE_FLAMEBALL_WIDTH_ORIG, PROJECTILE_FLAMEBALL_HEIGTH_ORIG }, // rect_dst
             character.projectile_delay + (2500 - (500 * character.flameball)),
             last_projectiles_times[FLAMEBALL],
-            projectile_sound,
+            projectile_sound[FLAMEBALL],
             FLAMEBALL, ANIMATION_SPEED
         );
     }
@@ -429,7 +429,7 @@ void SelectCard(std::string card_name, Character& character, TTF_Font* font, Dyn
 {
     if      (card_name == "Fire Rate")  character.projectile_delay = static_cast<int>(character.projectile_delay * 0.90);
     else if (card_name == "Heal") {     character.life++; life_text->Update(g_renderer, font, "Lifes: " + std::to_string(static_cast<int>(character.life)), { 255, 255, 255 }, { 0, 0, 0 }); }
-    else if (card_name == "Speed")      character.speed++;
+    else if (card_name == "Speed")      character.speed += 0.25f;
     else if (card_name == "Damage")     character.damage++;
     else if (card_name == "EXP")        character.exp_multiplier += 0.5;
     else if (card_name == "Flameball")  character.flameball += 1;

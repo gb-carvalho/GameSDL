@@ -35,7 +35,7 @@ void FireSingleProjectile(SDL_Rect player_rect, SDL_Texture* texture, float spee
     SDL_Rect rect_src, SDL_Rect rect_dst,
     int delay, Uint32& last_projectile_time, Mix_Chunk* sound, projectileType type, int animation_speed);
 Enemy* FindClosestEnemy(SDL_Rect player_rect, Enemy enemies[], int max_enemies);
-void FireProjectiles(Character character, SDL_Rect camera, SDL_Texture* projectile_textures[], Mix_Chunk* projectile_sound);
+void FireProjectiles(Character character, SDL_Rect camera, SDL_Texture* projectile_textures[], Mix_Chunk* projectile_sound[]);
 void UpdateProjectiles(int width_limit, int height_limit, float multiplier, Character character);
 void UpdateFlameballProjectilePosition(Projectile* projectile, SDL_Rect enemy_rect);
 void SpawnEnemies(EnemyType enemy_type, SDL_Rect camera, int bg_width, int bg_height, SDL_Texture* enemy_texture, int wave, int width, int height, int frames, float size_percent);

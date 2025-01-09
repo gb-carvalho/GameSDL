@@ -45,6 +45,11 @@ int main(int argc, char* argv[])
     Mix_Chunk* damage_sound =   InitSoundEffect("Assets/character_damage.wav", MIX_MAX_VOLUME / 7);
     Mix_Chunk* enemy_damage_sound = InitSoundEffect("Assets/enemy_damage.wav", MIX_MAX_VOLUME / 15);
     Mix_Chunk* projectile_sound = InitSoundEffect("Assets/projectile.wav", MIX_MAX_VOLUME / 5);
+    Mix_Chunk* fire1_sound = InitSoundEffect("Assets/fire1.wav", MIX_MAX_VOLUME / 8);
+    Mix_Chunk* fire2_sound = InitSoundEffect("Assets/fire2.wav", MIX_MAX_VOLUME / 8);
+    Mix_Chunk* vortex_sound = InitSoundEffect("Assets/whoosh1.wav", MIX_MAX_VOLUME / 12);
+    Mix_Chunk* projetiles_sound[] = {projectile_sound, fire1_sound, vortex_sound, fire2_sound };
+
 
     SDL_Rect camera = { 0, 0, screen_width, screen_height };
 
@@ -179,7 +184,7 @@ int main(int argc, char* argv[])
             else if (wave_type == 6) SpawnEnemies(MAGE2, camera, bg_width, bg_height, mage2_texture, wave, ENEMY_MAGE2_WIDTH, ENEMY_MAGE2_HEIGHT, ENEMY_MAGE2_FRAMES, 100);
             else if (wave_type == 7) SpawnEnemies(MAGE3, camera, bg_width, bg_height, mage3_texture, wave, ENEMY_MAGE3_WIDTH, ENEMY_MAGE3_HEIGHT, ENEMY_MAGE3_FRAMES, 100);
 
-            FireProjectiles(character, camera, projectile_textures, projectile_sound);
+            FireProjectiles(character, camera, projectile_textures, projetiles_sound);
             UpdateProjectiles(bg_width, bg_height, character.projectile_speed_multiplier, character);
 
             for (int i = 0; i < MAX_ENEMIES; i++) {

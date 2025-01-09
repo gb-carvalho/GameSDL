@@ -27,7 +27,7 @@ void Character::reset(SDL_Rect rect_dst_new) {
     pos_y    = static_cast<float>(rect_dst_new.y);
     flameball        = 0;
     flamepillar      = 0;
-    vortex           = 0;
+    vortex           = 1;
     last_frame_time  = 0;
     level_to_update  = 0;
     projectile_delay = CHARACTER_PROJECTILE_DELAY;
