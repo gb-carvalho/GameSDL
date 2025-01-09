@@ -224,7 +224,7 @@ void FireProjectiles(Character character, SDL_Rect camera, SDL_Texture* projecti
             { camera.x + rand() % 1920, camera.y + rand() % 1080,
                 PROJECTILE_FLAMEPILLAR_WIDTH_ORIG + 20, PROJECTILE_FLAMEPILLAR_WIDTH_ORIG + 20
             }, // rect_dst
-            character.projectile_delay + (2000 - (500 * character.flamepillar)),
+            character.projectile_delay + (1500 / (1 + character.flamepillar)),
             last_projectiles_times[FLAMEPILLAR],
             projectile_sound[FLAMEPILLAR],
             FLAMEPILLAR, ANIMATION_SPEED / 5
@@ -259,7 +259,7 @@ void FireProjectiles(Character character, SDL_Rect camera, SDL_Texture* projecti
             4,                      // Total frames
             { 0, 0, PROJECTILE_FLAMEBALL_WIDTH_ORIG, PROJECTILE_FLAMEBALL_HEIGTH_ORIG },  // rect_src
             { character.rect_dst.x + character.rect_dst.w / 4, character.rect_dst.y + character.rect_dst.h / 4, PROJECTILE_FLAMEBALL_WIDTH_ORIG, PROJECTILE_FLAMEBALL_HEIGTH_ORIG }, // rect_dst
-            character.projectile_delay + (2500 - (500 * character.flameball)),
+            character.projectile_delay + (2000 / (1 + character.flameball)),
             last_projectiles_times[FLAMEBALL],
             projectile_sound[FLAMEBALL],
             FLAMEBALL, ANIMATION_SPEED

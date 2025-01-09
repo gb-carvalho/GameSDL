@@ -1,7 +1,7 @@
 #pragma once
 #include "entity.hpp"
 
-#define MAX_PROJECTILES  100
+#define MAX_PROJECTILES  200
 #define PROJECTILE_WIDTH_ORIG  13
 #define PROJECTILE_HEIGTH_ORIG 13
 #define PROJECTILE_FLAMEBALL_WIDTH_ORIG  32
