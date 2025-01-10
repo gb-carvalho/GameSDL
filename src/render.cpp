@@ -38,7 +38,7 @@ void RenderProjectiles(SDL_Rect camera)
 void UpdateRenderStopwatchWave(int& start_time, int& time_left, int screen_width, int& elapsed_time, int& wave,
                                int& current_game_state, TTF_Font* font, int total_pause_duration, DynamicText* stopwatch_text)
 {
-    int wave_time_legth = std::min(25 + (wave * 5), 80);
+    int wave_time_legth = std::min(25 + ((wave/2) * 5), 60);
     elapsed_time = (SDL_GetTicks() - start_time - total_pause_duration) / 1000;
     if (current_game_state == PLAYING) time_left = wave_time_legth - elapsed_time;
     else time_left = wave_time_legth;

@@ -3,6 +3,7 @@
 
 #define DAMAGE_COOLDOWN         500
 #define MAX_EXP                 15
+#define MAX_LEVEL               46
 #define WALK_FRAME_COUNT        4
 #define IDLE_FRAME_COUNT        2
 #define CHARACTER_WIDTH_ORIG    32 //Size of character width in sprite

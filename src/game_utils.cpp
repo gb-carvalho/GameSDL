@@ -326,7 +326,11 @@ void SpawnEnemies(EnemyType enemy_type, SDL_Rect camera, int bg_width, int bg_he
 
         for (int i = 0; i < MAX_ENEMIES; i++) {
             if (!enemies[i].is_active) {
-                enemies[i] = Enemy{ 6, static_cast<float>(1 + (wave - 1)), frames,
+                float life_multiplier = (1 << (wave / 8)) / 1.85f;
+                double life_additional = (wave - 1) * 1.15;
+                float speed_additional = std::min((0.35f) * (wave / 8), 2.25f);
+
+                enemies[i] = Enemy{ 6 + speed_additional, static_cast<float>(life_multiplier * (1 + life_additional)), frames,
                     { 0, 0, width, height },  //rect_src
                     dst_rect, //dest_dst
                     enemy_texture, //texture
