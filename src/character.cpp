@@ -26,10 +26,10 @@ void Character::reset(SDL_Rect rect_dst_new) {
     pos_x    = static_cast<float>(rect_dst_new.x);
     pos_y    = static_cast<float>(rect_dst_new.y);
     flameball        = 0;
-    flamepillar      = 5;
-    vortex           = 5;
+    flamepillar      = 0;
+    vortex           = 0;
     last_frame_time  = 0;
-    level_to_update  = 0;
+    level_to_update  = 100;
     projectile_delay = CHARACTER_PROJECTILE_DELAY;
     exp_multiplier   = 1;
     projectile_speed_multiplier = 1;

@@ -1,15 +1,15 @@
 #include "card.hpp"
 
 std::vector<Card> cards = {
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Fire Rate", "Shoot faster", 0},
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Heal", "Restore 1 health point.", 0},
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Speed", "Increases speed.", 0},
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Damage", "Inceases damage.", 0},
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Projectile Speed", "Increases projectile speed", 0},
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "EXP", "Increases EXP gain.", 0},
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Flameball", "Gain/Improves Flameball.", 0},
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Vortex", "Gain/Improves Vortex.", 0},
-    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Flame Pillar", "Gain/Improves Flame Pillar.", 0},
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Heal", "Restore 1 health point.", 1},
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Fire Rate", "Shoot faster", 3},
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Speed", "Increases speed.", 4},
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Damage", "Inceases damage.", 5},
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Projectile Speed", "Increases projectile speed", 5},
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "EXP", "Increases EXP gain.", 5},
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Flameball", "Gain/Improves Flameball.", 5},
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Vortex", "Gain/Improves Vortex.", 5},
+    { {0, 0, CARD_WIDTH, CARD_HEIGHT}, {0, 0, 0, 0}, "Flame Pillar", "Gain/Improves Flame Pillar.", 5},
 };
 
 Card::Card()

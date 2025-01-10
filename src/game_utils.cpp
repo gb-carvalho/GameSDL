@@ -351,8 +351,38 @@ std::string TimeFormatted(int time_in_seconds) {
 }
 
 void randomizeCardArray() {
+    size_t MAX_SIZE = cards.size();
+    std::vector<int> eligible_cards;
+    std::vector<int> not_eligible_cards;
+
+    // Reserva espaço para evitar realocações
+    eligible_cards.reserve(MAX_SIZE);
+    not_eligible_cards.reserve(MAX_SIZE);
+
+    // Classifica as cartas em elegíveis e não elegíveis
+    for (int i = 0; i < cards.size(); i++) {
+        if (cards[i].level < 5)
+            eligible_cards.push_back(i);
+        else
+            not_eligible_cards.push_back(i);
+    }
+
+    // Preenche com cartas de nível máximo caso necessário
+    while (eligible_cards.size() < random_card_array.size()) {
+        size_t random_index = rand() % not_eligible_cards.size();
+        eligible_cards.push_back(not_eligible_cards[random_index]);
+
+        // Remove a carta de not_eligible_cards
+        not_eligible_cards.erase(not_eligible_cards.begin() + random_index);
+    }
+
+    // Preenche random_card_array com cartas aleatórias
     for (int i = 0; i < random_card_array.size(); i++) {
-        random_card_array[i] = rand() % cards.size();
+        size_t random_index = rand() % eligible_cards.size();
+        random_card_array[i] = eligible_cards[random_index];
+
+        // Remove a carta de eligible_cards para evitar repetições
+        eligible_cards.erase(eligible_cards.begin() + random_index);
     }
 }
 
