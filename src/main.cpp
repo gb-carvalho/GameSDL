@@ -186,6 +186,7 @@ int main(int argc, char* argv[])
 
             FireProjectiles(character, camera, projectile_textures, projetiles_sound);
             UpdateProjectiles(bg_width, bg_height, character.projectile_speed_multiplier, character);
+            RenderProjectiles(camera);
 
             for (int i = 0; i < MAX_ENEMIES; i++) {
                 if (enemies[i].is_active) {
@@ -213,7 +214,7 @@ int main(int argc, char* argv[])
                         }
                     }
 
-                    CheckProjectileCollisionWithEnemy(g_renderer, character, enemies[i].hitbox, enemies[i].life, enemies[i].is_active, camera, kill_count, 
+                    CheckProjectileCollisionWithEnemy(g_renderer, character, enemies[i], camera, kill_count, 
                         small_font, current_game_state, &kill_count_text, &level_text, enemy_damage_sound);
 
                     for (int j = i + 1; j < MAX_ENEMIES; j++) {
@@ -228,7 +229,6 @@ int main(int argc, char* argv[])
 
             memset(resolved_collision, 0, sizeof(resolved_collision));
 
-            RenderProjectiles(camera);
 
             RenderHeader(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, character, total_pause_duration,
                 &stopwatch_text, &life_text, &kill_count_text, &level_text);

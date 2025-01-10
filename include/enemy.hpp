@@ -40,6 +40,7 @@ public:
     int total_frames;
     SDL_RendererFlip flip;
     EnemyType type;
+    Uint32 last_damage_time;
 
     Enemy();
     Enemy(float spd, float life, int t_frms, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active, EnemyType enemy_type);

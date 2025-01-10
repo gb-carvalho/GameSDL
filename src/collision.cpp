@@ -26,27 +26,32 @@ bool CheckCollision(SDL_Rect a, SDL_Rect b, SDL_Rect camera)
     return collision;
 }
 
-void CheckProjectileCollisionWithEnemy(SDL_Renderer* g_renderer, Character& character, SDL_Rect enemy_rect, float& enemy_life, bool& active, SDL_Rect camera, int& kill_count,
+void CheckProjectileCollisionWithEnemy(SDL_Renderer* g_renderer, Character& character, Enemy& enemy, SDL_Rect camera, int& kill_count,
     TTF_Font* font, int& current_game_state, DynamicText *kill_count_text, DynamicText *level_text, Mix_Chunk* enemy_damage_sound)
 {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
-        if (projectiles[i].is_active && CheckCollision(projectiles[i].hitbox, enemy_rect, camera)) {
+        if (projectiles[i].is_active && CheckCollision(projectiles[i].hitbox, enemy.rect_dst, camera)) {
+
             if (projectiles[i].type == VORTEX || projectiles[i].type == FLAMEPILLAR) {
-                enemy_life -= character.damage / 4.0f;
+                Uint32 current_time = SDL_GetTicks();
+                if (current_time > enemy.last_damage_time + 200){
+                    enemy.life -= character.damage / 1.2f;
+                    enemy.last_damage_time = current_time;
+                }
             }
             else {
-                enemy_life -= character.damage;
+                enemy.life -= character.damage;
                 projectiles[i].deactivate();
             }
             Mix_PlayChannel(-1, enemy_damage_sound, 0);
-            if (enemy_life <= 0) {
+            if (enemy.life <= 0) {
                 kill_count++;
                 kill_count_text->Update(g_renderer, font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 }, { 0, 0, 0 });
                 character.exp += 1 * character.exp_multiplier;
                 if (character.exp >= MAX_EXP) {
                     LevelUp(g_renderer, character, current_game_state, font, level_text);
                 }
-                active = 0;
+                enemy.is_active = 0;
             }
         }
     }

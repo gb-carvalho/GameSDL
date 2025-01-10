@@ -29,7 +29,7 @@ void Character::reset(SDL_Rect rect_dst_new) {
     flamepillar      = 0;
     vortex           = 0;
     last_frame_time  = 0;
-    level_to_update  = 100;
+    level_to_update  = 0;
     projectile_delay = CHARACTER_PROJECTILE_DELAY;
     exp_multiplier   = 1;
     projectile_speed_multiplier = 1;

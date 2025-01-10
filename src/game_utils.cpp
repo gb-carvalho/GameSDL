@@ -330,7 +330,7 @@ void SpawnEnemies(EnemyType enemy_type, SDL_Rect camera, int bg_width, int bg_he
                     { 0, 0, width, height },  //rect_src
                     dst_rect, //dest_dst
                     enemy_texture, //texture
-                    true, enemy_type};
+                    true, enemy_type };
 
                 last_enemy_time = current_time;
                 break;
