@@ -16,6 +16,7 @@ extern SDL_Window* g_window ;
 extern SDL_Renderer* g_renderer;
 
 void RenderProjectiles(SDL_Rect camera);
+void RenderEnemy(Enemy* enemy, SDL_Rect camera);
 void UpdateRenderStopwatchWave(int& start_time, int& time_left, int screen_width, int& elapsed_time, int& wave, int& current_game_state, 
                                 TTF_Font* font, int total_pause_duration, DynamicText *stopwatch_text);
 void RenderExpBar(int screen_width, float exp);

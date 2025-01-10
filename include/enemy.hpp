@@ -36,14 +36,14 @@ enum EnemyType { MAGE, MAGE2, MAGE3, WOLF, BAT, GOLEM, ANDROMALIUS };
 
 class Enemy : public Entity {
 public:
-    bool is_active;
-    int total_frames;
+    bool is_active, is_dead;
+    int total_frames, death_frames;
     SDL_RendererFlip flip;
     EnemyType type;
     Uint32 last_damage_time;
 
     Enemy();
-    Enemy(float spd, float life, int t_frms, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active, EnemyType enemy_type);
+    Enemy(float spd, float life, int t_frms, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active, EnemyType enemy_type, bool dead);
 
     void UpdateHitbox() override;
     void deactivate();

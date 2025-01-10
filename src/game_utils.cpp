@@ -14,6 +14,9 @@ void LevelUp(SDL_Renderer* g_renderer, Character& character, int& current_game_s
 }
 
 void UpdateEnemyPosition(Enemy* enemy, SDL_Rect player_rect) {
+
+    if (enemy->is_dead) return;
+
     // Calcula a direção em que o inimigo deve se mover
     float diff_x = static_cast<float>(player_rect.x - enemy->rect_dst.x);
     float diff_y = static_cast<float>(player_rect.y - enemy->rect_dst.y);
@@ -68,6 +71,8 @@ void UpdateAnimationCharacter(Character* character, int width, int height, int w
 
 void UpdateEnemyAnimation(Enemy* enemy)
 {
+    if (enemy->is_dead) return;
+
     Uint32 current_time = SDL_GetTicks();
     if (current_time > enemy->last_frame_time + ANIMATION_SPEED) {
         enemy->frame = (enemy->frame + 1) % enemy->total_frames;
@@ -335,11 +340,25 @@ void SpawnEnemies(EnemyType enemy_type, SDL_Rect camera, int bg_width, int bg_he
                     { 0, 0, width, height },  //rect_src
                     dst_rect, //dest_dst
                     enemy_texture, //texture
-                    true, enemy_type };
+                    true, enemy_type, false };
 
                 last_enemy_time = current_time;
                 break;
             }
+        }
+    }
+}
+
+void CharacterTookDamage(Character *character, DynamicText* life_text, TTF_Font* small_font, Mix_Chunk* damage_sound, int& current_game_state) {
+    Uint32 current_time = SDL_GetTicks();
+    if (current_time > character->last_damage_time + DAMAGE_COOLDOWN) {
+        character->life -= 1;
+        character->took_damage = true;
+        life_text->Update(g_renderer, small_font, "Lifes: " + std::to_string(static_cast<int>(character->life)), { 255, 255, 255 }, { 0, 0, 0 });
+        character->last_damage_time = current_time;
+        Mix_PlayChannel(-1, damage_sound, 0);
+        if (character->life <= 0) {
+            current_game_state = GAME_OVER;
         }
     }
 }

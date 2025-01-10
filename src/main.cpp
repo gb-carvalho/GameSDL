@@ -191,27 +191,10 @@ int main(int argc, char* argv[])
             for (int i = 0; i < MAX_ENEMIES; i++) {
                 if (enemies[i].is_active) {
                     UpdateEnemyPosition(&enemies[i], character.rect_dst);
-                    SDL_Rect enemy_render_rect = {
-                        enemies[i].rect_dst.x - camera.x,
-                        enemies[i].rect_dst.y - camera.y,
-                        enemies[i].rect_dst.w,
-                        enemies[i].rect_dst.h
-                    };
-                    enemies[i].UpdateHitbox();
-                    SDL_RenderCopyEx(g_renderer, enemies[i].texture, &enemies[i].rect_src, &enemy_render_rect, 0, NULL, enemies[i].flip);
+                    RenderEnemy(&enemies[i], camera);
 
                     if (CheckCollision(character.hitbox, enemies[i].hitbox, camera)) {
-                        Uint32 current_time = SDL_GetTicks();
-                        if (current_time > character.last_damage_time + DAMAGE_COOLDOWN) {
-                            character.life -= 1;
-                            character.took_damage = true;
-                            life_text.Update(g_renderer, small_font, "Lifes: " + std::to_string(static_cast<int>(character.life)), { 255, 255, 255 }, { 0, 0, 0 });
-                            character.last_damage_time = current_time;
-                            Mix_PlayChannel(-1, damage_sound, 0);
-                            if (character.life <= 0) {
-                                current_game_state = GAME_OVER;
-                            }
-                        }
+                        CharacterTookDamage(&character, &life_text, small_font, damage_sound, current_game_state);                      
                     }
 
                     CheckProjectileCollisionWithEnemy(g_renderer, character, enemies[i], camera, kill_count, 

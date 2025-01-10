@@ -1,13 +1,20 @@
 #include "enemy.hpp"
 
-Enemy::Enemy() : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), is_active(false), total_frames(0), flip(SDL_FLIP_NONE), type(MAGE), last_damage_time(0) {}
+Enemy::Enemy() : Entity(0, 0, 0, 0, { 0, 0, 0, 0 }, { 0, 0, 0, 0 }, nullptr), is_active(false), total_frames(0), flip(SDL_FLIP_NONE), type(MAGE), last_damage_time(0),
+                 is_dead(false), death_frames(30){}
 
-Enemy::Enemy(float spd, float life, int t_frms, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active, EnemyType enemy_type)
-    : Entity(spd, life, 0, 0, src, dst, tex), is_active(active), total_frames(t_frms), flip(SDL_FLIP_NONE), type(enemy_type), last_damage_time(0) {
+Enemy::Enemy(float spd, float life, int t_frms, SDL_Rect src, SDL_Rect dst, SDL_Texture* tex, bool active, EnemyType enemy_type, bool dead)
+    : Entity(spd, life, 0, 0, src, dst, tex), is_active(active), total_frames(t_frms), flip(SDL_FLIP_NONE), type(enemy_type), last_damage_time(0),
+      death_frames(15), is_dead(dead){
     UpdateHitbox();
 }
 
 void Enemy::UpdateHitbox()  {
+
+    if (is_dead) {
+        hitbox = { 0,0,0,0 };
+        return;
+    }
 
     switch (type) {
     case MAGE:

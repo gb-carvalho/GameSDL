@@ -53,7 +53,7 @@ void CheckProjectileCollisionWithEnemy(SDL_Renderer* g_renderer, Character& char
                         LevelUp(g_renderer, character, current_game_state, font, level_text);
                     }
                 }
-                enemy.is_active = 0;
+                enemy.is_dead = 1;
             }
         }
     }

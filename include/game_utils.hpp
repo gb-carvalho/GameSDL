@@ -44,6 +44,7 @@ void ResetGame(int& kill_count, int& wave, Character* character, int bg_width, i
                int& elapsed_time, TTF_Font* font, int& total_pause_duration,
                DynamicText* stopwatch_text, DynamicText* life_text, DynamicText* kill_count_text, DynamicText* level_text);
 void SelectCard(std::string card_name, Character& character, TTF_Font* font, DynamicText* life_text);
+void CharacterTookDamage(Character* character, DynamicText* life_text, TTF_Font* small_font, Mix_Chunk* damage_sound, int& current_game_state);
 void randomizeCardArray();
 void NewWave(int& current_game_state, int& wave, bool& skip);
 void DamageColor(SDL_Texture* texture, Uint32 last_damage_time, bool& took_damage);

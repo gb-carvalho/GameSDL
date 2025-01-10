@@ -35,6 +35,37 @@ void RenderProjectiles(SDL_Rect camera)
     }
 }
 
+void RenderEnemy(Enemy* enemy, SDL_Rect camera) {
+
+    SDL_Rect enemy_render_rect = {
+    enemy->rect_dst.x - camera.x,
+    enemy->rect_dst.y - camera.y,
+    enemy->rect_dst.w,
+    enemy->rect_dst.h
+    };
+
+    if (enemy->is_dead) {
+        const int death_duration = 15;
+        int death_frames = enemy->death_frames;
+
+        if (death_frames >= 0) {
+            float progress = (float)death_frames / death_duration;
+
+            enemy_render_rect.h = (int)(enemy->rect_dst.h * progress);
+            enemy_render_rect.y += enemy->rect_dst.h - enemy_render_rect.h;
+
+            enemy->death_frames--;
+        }
+        if (death_frames == 0){
+            enemy->deactivate();
+            enemy->is_dead = 0;
+            return;
+        }
+    }
+    enemy->UpdateHitbox();
+    SDL_RenderCopyEx(g_renderer, enemy->texture, &enemy->rect_src, &enemy_render_rect, 0, NULL, enemy->flip);
+}
+
 void UpdateRenderStopwatchWave(int& start_time, int& time_left, int screen_width, int& elapsed_time, int& wave,
                                int& current_game_state, TTF_Font* font, int total_pause_duration, DynamicText* stopwatch_text)
 {
