@@ -8,8 +8,8 @@
 #define IDLE_FRAME_COUNT        2
 #define CHARACTER_WIDTH_ORIG    32 //Size of character width in sprite
 #define CHARACTER_HEIGHT_ORIG   32 //Size of character height in sprite
-#define CHARACTER_WIDTH_RENDER  64 //Size of character width in render
-#define CHARACTER_HEIGHT_RENDER 64 //Size of character height in render
+#define CHARACTER_WIDTH_RENDER  60 //Size of character width in render
+#define CHARACTER_HEIGHT_RENDER 60 //Size of character height in render
 #define CHARACTER_PROJECTILE_DELAY 1000
 
 

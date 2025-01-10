@@ -20,7 +20,7 @@ void Character::reset(SDL_Rect rect_dst_new) {
     damage   = 1;
     frame    = 0;   
     exp      = 0;
-    level    = 44;
+    level    = 1;
     speed    = 7;
     rect_dst = rect_dst_new;
     pos_x    = static_cast<float>(rect_dst_new.x);

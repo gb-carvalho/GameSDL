@@ -177,9 +177,9 @@ int main(int argc, char* argv[])
             
             int wave_type = (wave - 1) % 7 + 1;
             if (wave_type == 1)      SpawnEnemies(BAT, camera, bg_width, bg_height, bat_texture, wave, ENEMY_BAT_WIDTH, ENEMY_BAT_HEIGHT, ENEMY_BAT_FRAMES, 100);
-            else if (wave_type == 2) SpawnEnemies(WOLF, camera, bg_width, bg_height, wolf_texture, wave, ENEMY_WOLF_WIDTH, ENEMY_WOLF_HEIGHT, ENEMY_WOLF_FRAMES, 150);
-            else if (wave_type == 3) SpawnEnemies(GOLEM, camera, bg_width, bg_height, golem_texture, wave, ENEMY_GOLEM_WIDTH, ENEMY_GOLEM_HEIGHT, ENEMY_GOLEM_FRAMES, 140);
-            else if (wave_type == 4) SpawnEnemies(ANDROMALIUS, camera, bg_width, bg_height, andromalius_texture, wave, ENEMY_ANDROMALIUS_WIDTH, ENEMY_ANDROMALIUS_HEIGHT, ENEMY_ANDROMALIUS_FRAMES, 100);
+            else if (wave_type == 2) SpawnEnemies(WOLF, camera, bg_width, bg_height, wolf_texture, wave, ENEMY_WOLF_WIDTH, ENEMY_WOLF_HEIGHT, ENEMY_WOLF_FRAMES, 160);
+            else if (wave_type == 3) SpawnEnemies(GOLEM, camera, bg_width, bg_height, golem_texture, wave, ENEMY_GOLEM_WIDTH, ENEMY_GOLEM_HEIGHT, ENEMY_GOLEM_FRAMES, 155);
+            else if (wave_type == 4) SpawnEnemies(ANDROMALIUS, camera, bg_width, bg_height, andromalius_texture, wave, ENEMY_ANDROMALIUS_WIDTH, ENEMY_ANDROMALIUS_HEIGHT, ENEMY_ANDROMALIUS_FRAMES, 115);
             else if (wave_type == 5) SpawnEnemies(MAGE, camera, bg_width, bg_height, mage_texture, wave, ENEMY_MAGE_WIDTH, ENEMY_MAGE_HEIGHT, ENEMY_MAGE_FRAMES, 100);
             else if (wave_type == 6) SpawnEnemies(MAGE2, camera, bg_width, bg_height, mage2_texture, wave, ENEMY_MAGE2_WIDTH, ENEMY_MAGE2_HEIGHT, ENEMY_MAGE2_FRAMES, 100);
             else if (wave_type == 7) SpawnEnemies(MAGE3, camera, bg_width, bg_height, mage3_texture, wave, ENEMY_MAGE3_WIDTH, ENEMY_MAGE3_HEIGHT, ENEMY_MAGE3_FRAMES, 100);
@@ -229,12 +229,12 @@ int main(int argc, char* argv[])
 
             memset(resolved_collision, 0, sizeof(resolved_collision));
 
+            SDL_RenderCopy(g_renderer, character.texture, &character.rect_src, &player_render_rect);
 
             RenderHeader(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, character, total_pause_duration,
                 &stopwatch_text, &life_text, &kill_count_text, &level_text);
             if (time_left <= 0) NewWave(current_game_state, wave, skip);
 
-            SDL_RenderCopy(g_renderer, character.texture, &character.rect_src, &player_render_rect);
             break;
         }
         case CARD_SELECTOR: {
@@ -245,6 +245,7 @@ int main(int argc, char* argv[])
                 character.pos_x = static_cast<float>(character.rect_dst.x);
                 character.pos_y = static_cast<float>(character.rect_dst.y);
                 start_time = SDL_GetTicks();
+                key_pressed = false;
 
                 for (int i = 0; i < MAX_ENEMIES; i++) {
                     enemies[i].deactivate();
@@ -265,9 +266,9 @@ int main(int argc, char* argv[])
                     running = false;
                 }
                 else if (event.type == SDL_KEYDOWN && !key_pressed) {
+                    key_pressed = true;
                     switch (event.key.keysym.scancode) {
                     case SDL_SCANCODE_RETURN:
-
                         all_levels_are_five = true;
                         for (int i = 0; i < random_card_array.size(); ++i) {
                             if (cards[random_card_array[i]].level != 5) {
