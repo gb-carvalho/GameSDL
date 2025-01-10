@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
     bool running = true;
     int current_game_state = TITLE_SCREEN;
     int kill_count, start_time, elapsed_time, wave, time_left, pause_start_time = 0, total_pause_duration = 0;
-    bool key_pressed = false, skip = false, new_record = false, allLevelsAreFive;
+    bool key_pressed = false, skip = false, new_record = false, all_levels_are_five;
     DynamicText life_text, level_text, title_text, pause_text, kill_count_text, stopwatch_text;
 
     while (running) {
@@ -265,20 +265,18 @@ int main(int argc, char* argv[])
                     running = false;
                 }
                 else if (event.type == SDL_KEYDOWN && !key_pressed) {
-                    key_pressed = true;
-
                     switch (event.key.keysym.scancode) {
                     case SDL_SCANCODE_RETURN:
 
-                        allLevelsAreFive = true;
+                        all_levels_are_five = true;
                         for (int i = 0; i < random_card_array.size(); ++i) {
                             if (cards[random_card_array[i]].level != 5) {
-                                allLevelsAreFive = false;
+                                all_levels_are_five = false;
                                 break;
                             }
                         }
 
-                        if (allLevelsAreFive) {
+                        if (all_levels_are_five) {
                             skip = true;
                             break;
                         }
@@ -295,14 +293,12 @@ int main(int argc, char* argv[])
 
                     case SDL_SCANCODE_A:
                     case SDL_SCANCODE_LEFT:
-                        card_selected--;
-                        if (card_selected < 0) card_selected = CARDS_TO_CHOSE - 1;
+                        card_selected = (card_selected - 1 + CARDS_TO_CHOSE) % CARDS_TO_CHOSE;  // Loop circular
                         break;
 
                     case SDL_SCANCODE_D:
                     case SDL_SCANCODE_RIGHT:
-                        card_selected++;
-                        if (card_selected >= CARDS_TO_CHOSE) card_selected = 0;
+                        card_selected = (card_selected + 1) % CARDS_TO_CHOSE;  // Loop circular
                         break;
 
                     default:

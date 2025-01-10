@@ -14,7 +14,7 @@
 #include "collision.hpp"
 
 #define ANIMATION_SPEED        160 //Isso deveria ter valor diferente por entidade talvez
-#define FIRST_WAVE_TIME        30
+#define FIRST_WAVE_TIME        1
 #define SAVE_FILE              "sdl.dat"
 
 extern Uint32 last_projectiles_times[];
