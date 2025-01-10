@@ -9,7 +9,8 @@ void LevelUp(SDL_Renderer* g_renderer, Character& character, int& current_game_s
     character.exp = 0;
     character.level_to_update++;
     character.level++;
-    level_text->Update(g_renderer, font, "Level: " + std::to_string(character.level), { 255, 255, 255 }, { 0, 0, 0 });
+    if (character.level == MAX_LEVEL)level_text->Update(g_renderer, font, "Level: MAX", { 255, 255, 255 }, { 0, 0, 0 });
+    else level_text->Update(g_renderer, font, "Level: " + std::to_string(character.level), { 255, 255, 255 }, { 0, 0, 0 });
 }
 
 void UpdateEnemyPosition(Enemy* enemy, SDL_Rect player_rect) {

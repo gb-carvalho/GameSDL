@@ -47,9 +47,11 @@ void CheckProjectileCollisionWithEnemy(SDL_Renderer* g_renderer, Character& char
             if (enemy.life <= 0) {
                 kill_count++;
                 kill_count_text->Update(g_renderer, font, "Enemies killed: " + std::to_string(kill_count), { 255, 255, 255 }, { 0, 0, 0 });
-                character.exp += 1 * character.exp_multiplier;
-                if (character.exp >= MAX_EXP) {
-                    LevelUp(g_renderer, character, current_game_state, font, level_text);
+                if (character.level < MAX_LEVEL) {
+                    character.exp += 1 * character.exp_multiplier;
+                    if (character.exp >= MAX_EXP) {
+                        LevelUp(g_renderer, character, current_game_state, font, level_text);
+                    }
                 }
                 enemy.is_active = 0;
             }
