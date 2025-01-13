@@ -30,7 +30,7 @@ void CheckProjectileCollisionWithEnemy(SDL_Renderer* g_renderer, Character& char
     TTF_Font* font, int& current_game_state, DynamicText *kill_count_text, DynamicText *level_text, Mix_Chunk* enemy_damage_sound)
 {
     for (int i = 0; i < MAX_PROJECTILES; i++) {
-        if (projectiles[i].is_active && CheckCollision(projectiles[i].hitbox, enemy.rect_dst, camera)) {
+        if (projectiles[i].is_active && CheckCollision(projectiles[i].hitbox, enemy.hitbox, camera)) {
 
             if (projectiles[i].type == VORTEX || projectiles[i].type == FLAMEPILLAR) {
                 Uint32 current_time = SDL_GetTicks();

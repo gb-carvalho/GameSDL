@@ -191,7 +191,7 @@ void FireSingleProjectile(SDL_Rect player_rect, SDL_Texture* texture, float spee
 
                 Enemy* closest_enemy = FindClosestEnemy(player_rect, enemies, MAX_ENEMIES);
                 if (closest_enemy) {
-                    if (type == MAGICBALL) CalculateDirection(player_rect, closest_enemy->rect_dst, &projectiles[i]);
+                    if (type == MAGICBALL) CalculateDirection(player_rect, closest_enemy->hitbox, &projectiles[i]);
                     projectiles[i].is_active = true;
                     Mix_PlayChannel(-1, sound, 0);
                 }
