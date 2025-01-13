@@ -33,6 +33,7 @@ void Character::reset(SDL_Rect rect_dst_new) {
     projectile_delay = CHARACTER_PROJECTILE_DELAY;
     exp_multiplier   = 1;
     projectile_speed_multiplier = 1;
+    UpdateHitbox();
 }
 
 void Character::updateState(characterState newState) {

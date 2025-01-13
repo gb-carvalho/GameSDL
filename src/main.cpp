@@ -227,6 +227,7 @@ int main(int argc, char* argv[])
                 character.rect_dst = { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER };
                 character.pos_x = static_cast<float>(character.rect_dst.x);
                 character.pos_y = static_cast<float>(character.rect_dst.y);
+                character.UpdateHitbox();
                 start_time = SDL_GetTicks();
                 key_pressed = false;
 
