@@ -128,8 +128,10 @@ int main(int argc, char* argv[])
 
             SDL_RenderCopy(g_renderer, title_texture, nullptr, nullptr);
 
-            title_text.Update(g_renderer, font, "Batata Game", { 0, 0, 0 }, { 255, 255, 255 });
+            title_text.Update(g_renderer, font, "Tanne", { 0, 0, 0 }, { 255, 255, 255 });
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 4 - title_text.rect.h / 2, true);
+            title_text.Update(g_renderer, small_font, "Portals of Eternity", { 0, 0, 0 }, { 255, 255, 255 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 4 - title_text.rect.h / 2 + 60, true);
             title_text.Update(g_renderer, small_font, "Press Enter to start", { 255, 255, 255 }, { 0, 0, 0 });
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - title_text.rect.h / 2 + 20, true);
 
