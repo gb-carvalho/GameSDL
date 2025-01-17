@@ -61,7 +61,7 @@ int main(int argc, char* argv[])
     Character character{7, 3,
         { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG }, //rect_src
         { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER }, //rect_dst
-        CreateTextureImg("Assets/batata_spritesheet.png"), //texture
+        CreateTextureImg("Assets/batata_new_spritesheet.png"), //texture
         IDLE, CHARACTER_PROJECTILE_DELAY};
 
     SDL_Texture* projectile_texture = CreateTextureImg("Assets/mage-bullet-13x13.png");
@@ -214,7 +214,7 @@ int main(int argc, char* argv[])
 
             memset(resolved_collision, 0, sizeof(resolved_collision));
 
-            SDL_RenderCopy(g_renderer, character.texture, &character.rect_src, &player_render_rect);
+            SDL_RenderCopyEx(g_renderer, character.texture, &character.rect_src, &player_render_rect, 0, NULL, character.flip);
 
             RenderHeader(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, character, total_pause_duration,
                 &stopwatch_text, &life_text, &kill_count_text, &level_text);

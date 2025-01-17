@@ -55,12 +55,12 @@ void UpdateFlameballProjectilePosition(Projectile* projectile, SDL_Rect enemy_re
 void UpdateAnimationCharacter(Character* character, int width, int height, int walk_frame_count, int idle_frame_count)
 {
     Uint32 current_time = SDL_GetTicks();
-    if (current_time > character->last_frame_time + ANIMATION_SPEED) {
-        if (character->current_state == WALKING) {
+    if (current_time > character->last_frame_time + (ANIMATION_SPEED-60)) {
+        if (character->current_state == IDLE) {
             character->frame = (character->frame + 1) % walk_frame_count;
             character->rect_src.y = 0;
         }
-        else if (character->current_state == IDLE) {
+        else if (character->current_state == WALKING) {
             character->frame = (character->frame + 1) % idle_frame_count;
             character->rect_src.y = height;
         }
@@ -543,6 +543,10 @@ void MoveCharacter(Character* character, const Uint8* keyState, int bg_width, in
     character->rect_dst.y = static_cast<int>(character->pos_y);
 
     if (dx != 0 || dy != 0) {
+
+        if (dx < 0) character->flip = SDL_FLIP_HORIZONTAL;
+        else character->flip = SDL_FLIP_NONE;
+
         character->current_state = WALKING;
         character->UpdateHitbox();
     }

@@ -8,8 +8,8 @@ Character::Character(float spd, float lfe, SDL_Rect src, SDL_Rect dst, SDL_Textu
 }
 
 void Character::UpdateHitbox(){
-    hitbox.w = static_cast<int>(rect_dst.w * 0.5);
-    hitbox.h = static_cast<int>(rect_dst.h * 0.9);
+    hitbox.w = static_cast<int>(rect_dst.w * 0.33);
+    hitbox.h = static_cast<int>(rect_dst.h * 0.39);
 
     hitbox.x = rect_dst.x + (rect_dst.w - hitbox.w) / 2;
     hitbox.y = rect_dst.y + (rect_dst.h - hitbox.h) / 2;
