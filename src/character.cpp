@@ -25,7 +25,7 @@ void Character::reset(SDL_Rect rect_dst_new) {
     rect_dst = rect_dst_new;
     pos_x    = static_cast<float>(rect_dst_new.x);
     pos_y    = static_cast<float>(rect_dst_new.y);
-    flameball        = 0;
+    flameball        = 2;
     flamepillar      = 0;
     vortex           = 0;
     last_frame_time  = 0;

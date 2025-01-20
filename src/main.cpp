@@ -96,6 +96,14 @@ int main(int argc, char* argv[])
         TTF_Quit();
         SDL_Quit();
     }
+    TTF_Font* small_font_card = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf", 20);
+    if (!small_font) {
+        SDL_Log("Error loading font: %s", TTF_GetError());
+        SDL_DestroyRenderer(g_renderer);
+        SDL_DestroyWindow(g_window);
+        TTF_Quit();
+        SDL_Quit();
+    }
 
     //Init seed for random number
     srand(static_cast<unsigned int>(time(nullptr)));
@@ -244,7 +252,7 @@ int main(int argc, char* argv[])
                 SDL_RenderCopy(g_renderer, bg_texture, &camera, nullptr);
                 RenderHeader(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, character, total_pause_duration,
                              &stopwatch_text, &life_text, &kill_count_text, &level_text);
-                RenderCardSelection(card_selected, small_font, screen_width, screen_height, character.level_to_update);
+                RenderCardSelection(card_selected, small_font_card, screen_width, screen_height, character.level_to_update);
             }
 
             while (SDL_PollEvent(&event)) {
