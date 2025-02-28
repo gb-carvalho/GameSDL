@@ -5,7 +5,7 @@
 
 GameSDL é um jogo desenvolvido em C++ utilizando a biblioteca [SDL (Simple DirectMedia Layer)](https://www.libsdl.org/). O objetivo principal do projeto é explorar e aprimorar os fundamentos da linguagem C++ e o desenvolvimento de jogos com SDL, proporcionando uma excelente oportunidade de estudo e prática.
 
-## aFuncionalidades
+## Funcionalidades
 
 -   Gráficos renderizados com SDL2
     
