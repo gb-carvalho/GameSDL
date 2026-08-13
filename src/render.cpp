@@ -94,6 +94,42 @@ void RenderExpBar(int screen_width, float exp)
     SDL_RenderFillRect(g_renderer, &filled_rect);
 }
 
+void RenderLifeBar(Character character, SDL_Rect camera)
+{
+    // altura e largura da barra
+    const int barWidth = 51;
+    const int barHeight = 6;
+    const int offset = -20; 
+
+    // centraliza a barra no personagem
+    int barX = character.rect_dst.x + (character.rect_dst.w / 2) - (barWidth / 2);
+    int barY = character.rect_dst.y + character.rect_dst.h + offset;
+
+    // retângulo da borda
+    SDL_Rect barRect = {
+        barX - camera.x,
+        barY - camera.y,
+        barWidth,
+        barHeight
+    };
+
+    SDL_SetRenderDrawColor(g_renderer, 200, 200, 200, 255);
+    SDL_RenderDrawRect(g_renderer, &barRect);
+
+    // vida preenchida
+    int filledWidth = (character.life * barWidth) / 3;
+
+    SDL_Rect filledRect = {
+        barX + 1 - camera.x,
+        barY + 1 - camera.y,
+        filledWidth - 2,
+        barHeight - 2
+    };
+
+    SDL_SetRenderDrawColor(g_renderer, 139, 0, 0, 255);
+    SDL_RenderFillRect(g_renderer, &filledRect);
+}
+
 void DrawThickRect(SDL_Renderer* renderer, SDL_Rect* rect, int thickness)
 {
     for (int i = 0; i < thickness; i++) {

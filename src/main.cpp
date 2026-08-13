@@ -223,7 +223,7 @@ int main(int argc, char* argv[])
             memset(resolved_collision, 0, sizeof(resolved_collision));
 
             SDL_RenderCopyEx(g_renderer, character.texture, &character.rect_src, &player_render_rect, 0, NULL, character.flip);
-
+            RenderLifeBar(character, camera);
             RenderHeader(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, character, total_pause_duration,
                 &stopwatch_text, &life_text, &kill_count_text, &level_text);
             if (time_left <= 0) NewWave(current_game_state, wave, skip);

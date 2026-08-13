@@ -20,6 +20,7 @@ void RenderEnemy(Enemy* enemy, SDL_Rect camera);
 void UpdateRenderStopwatchWave(int& start_time, int& time_left, int screen_width, int& elapsed_time, int& wave, int& current_game_state, 
                                 TTF_Font* font, int total_pause_duration, DynamicText *stopwatch_text);
 void RenderExpBar(int screen_width, float exp);
+void RenderLifeBar(Character character, SDL_Rect camera);
 void DrawThickRect(SDL_Renderer* renderer, SDL_Rect* rect, int thickness);
 void RenderCardSelection(int card_selected, TTF_Font* small_font, int screen_width, int screen_height, int level_to_update);
 void RenderHeader(int& start_time, int& time_left, int screen_width, int& elapsed_time, int& wave, int& current_game_state, 
