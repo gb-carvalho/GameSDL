@@ -49,5 +49,5 @@ void randomizeCardArray();
 void NewWave(int& current_game_state, int& wave, bool& skip);
 void DamageColor(SDL_Texture* texture, Uint32 last_damage_time, bool& took_damage);
 void MoveCharacter(Character* character, const Uint8* keyState, int bg_width, int bg_height);
-void LoadGame(const std::string& file_name, int& kill_count, int& wave);
+bool LoadGame(const std::string& file_name, int& kill_count, int& wave);
 void SaveGame(const std::string& file_name, int kill_count, int wave);

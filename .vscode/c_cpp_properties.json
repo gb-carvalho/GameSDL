@@ -4,10 +4,10 @@
             "name": "Win32",
             "includePath": [
                 "${workspaceFolder}/include",
-                "${workspaceFolder}/SDL2-2.30.8/include",
-                "${workspaceFolder}/SDL2_image-2.8.2/include",
-                "${workspaceFolder}/SDL2_ttf-2.20.2/include",
-                "${workspaceFolder}/SDL2_mixer-2.8.0/include"
+                "${workspaceFolder}/engines/SDL2-2.30.8/include",
+                "${workspaceFolder}/engines/SDL2_image-2.8.2/include",
+                "${workspaceFolder}/engines/SDL2_ttf-2.20.2/include",
+                "${workspaceFolder}/engines/SDL2_mixer-2.8.0/include"
             ],
             "defines": [
                 "WIN32",

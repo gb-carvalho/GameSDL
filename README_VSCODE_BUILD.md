@@ -13,6 +13,6 @@ cmake --build build --config Debug
 ```
 
 Observações:
-- O repositório já inclui as bibliotecas SDL em pastas locais (`SDL2-*/lib/x64`). O CMake configurado liga essas `.lib` automaticamente quando usa MSVC/x64.
+- O repositório já inclui as bibliotecas SDL em uma pasta compartilhada (`engines/SDL2-*/lib/x64`). O CMake configurado liga essas `.lib` automaticamente quando usa MSVC/x64.
 - Os DLLs necessários serão copiados para a pasta do executável pelo passo pós-build.
 - Se preferir outra toolchain (MinGW, clang) ajuste `-A`/o `compilerPath` em `.vscode/c_cpp_properties.json`.

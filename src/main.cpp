@@ -41,46 +41,46 @@ int main(int argc, char* argv[])
     InitRenderer(&g_window, &g_renderer);
 
     InitSDLMusic();
-    Mix_Music* music = InitMusic("Assets/music.mp3", -1);
-    Mix_Chunk* damage_sound =   InitSoundEffect("Assets/character_damage.wav", MIX_MAX_VOLUME / 7);
-    Mix_Chunk* enemy_damage_sound = InitSoundEffect("Assets/enemy_damage.wav", MIX_MAX_VOLUME / 15);
-    Mix_Chunk* projectile_sound = InitSoundEffect("Assets/projectile.wav", MIX_MAX_VOLUME / 5);
-    Mix_Chunk* fire1_sound = InitSoundEffect("Assets/fire1.wav", MIX_MAX_VOLUME / 8);
-    Mix_Chunk* fire2_sound = InitSoundEffect("Assets/fire2.wav", MIX_MAX_VOLUME / 8);
-    Mix_Chunk* vortex_sound = InitSoundEffect("Assets/whoosh1.wav", MIX_MAX_VOLUME / 14);
+    Mix_Music* music = InitMusic("Assets/audio/music.mp3", -1);
+    Mix_Chunk* damage_sound =   InitSoundEffect("Assets/audio/character_damage.wav", MIX_MAX_VOLUME / 7);
+    Mix_Chunk* enemy_damage_sound = InitSoundEffect("Assets/audio/enemy_damage.wav", MIX_MAX_VOLUME / 15);
+    Mix_Chunk* projectile_sound = InitSoundEffect("Assets/audio/projectile.wav", MIX_MAX_VOLUME / 5);
+    Mix_Chunk* fire1_sound = InitSoundEffect("Assets/audio/fire1.wav", MIX_MAX_VOLUME / 8);
+    Mix_Chunk* fire2_sound = InitSoundEffect("Assets/audio/fire2.wav", MIX_MAX_VOLUME / 8);
+    Mix_Chunk* vortex_sound = InitSoundEffect("Assets/audio/whoosh1.wav", MIX_MAX_VOLUME / 14);
     Mix_Chunk* projetiles_sound[] = {projectile_sound, fire1_sound, vortex_sound, fire2_sound };
 
 
     SDL_Rect camera = { 0, 0, screen_width, screen_height };
 
     //Background
-    SDL_Texture* bg_texture = CreateTextureImg("Assets/background.png");
+    SDL_Texture* bg_texture = CreateTextureImg("Assets/images/background.png");
     int bg_width, bg_height;
     SDL_QueryTexture(bg_texture, NULL, NULL, &bg_width, &bg_height);
 
     Character character{7, 3,
         { 0, 0, CHARACTER_WIDTH_ORIG, CHARACTER_HEIGHT_ORIG }, //rect_src
         { bg_width / 2, bg_height / 2, CHARACTER_WIDTH_RENDER, CHARACTER_HEIGHT_RENDER }, //rect_dst
-        CreateTextureImg("Assets/batata_new_spritesheet.png"), //texture
+        CreateTextureImg("Assets/images/batata_new_spritesheet.png"), //texture
         IDLE, CHARACTER_PROJECTILE_DELAY};
 
-    SDL_Texture* projectile_texture = CreateTextureImg("Assets/mage-bullet-13x13.png");
-    SDL_Texture* projectile_flameball_texture = CreateTextureImg("Assets/flameball-32x32.png");
-    SDL_Texture* projectile_vortex_texture = CreateTextureImg("Assets/Effect_TheVortex_1_429x429.png");
-    SDL_Texture* projectile_flame_pillar_texture = CreateTextureImg("Assets/flame_pillar.png");
+    SDL_Texture* projectile_texture = CreateTextureImg("Assets/images/mage-bullet-13x13.png");
+    SDL_Texture* projectile_flameball_texture = CreateTextureImg("Assets/images/flameball-32x32.png");
+    SDL_Texture* projectile_vortex_texture = CreateTextureImg("Assets/images/Effect_TheVortex_1_429x429.png");
+    SDL_Texture* projectile_flame_pillar_texture = CreateTextureImg("Assets/images/flame_pillar.png");
     SDL_Texture* projectile_textures[] = { projectile_texture, projectile_flameball_texture, projectile_vortex_texture, projectile_flame_pillar_texture };
 
-    SDL_Texture* mage_texture = CreateTextureImg("Assets/mage.png");
-    SDL_Texture* mage2_texture = CreateTextureImg("Assets/mage2.png");
-    SDL_Texture* mage3_texture = CreateTextureImg("Assets/mage3.png");
-    SDL_Texture* wolf_texture = CreateTextureImg("Assets/wolf.png");
-    SDL_Texture* bat_texture = CreateTextureImg("Assets/bat.png");
-    SDL_Texture* golem_texture = CreateTextureImg("Assets/golem.png");
-    SDL_Texture* andromalius_texture = CreateTextureImg("Assets/andromalius2.png");
-    SDL_Texture* title_texture = CreateTextureImg("Assets/title.png");
+    SDL_Texture* mage_texture = CreateTextureImg("Assets/images/mage.png");
+    SDL_Texture* mage2_texture = CreateTextureImg("Assets/images/mage2.png");
+    SDL_Texture* mage3_texture = CreateTextureImg("Assets/images/mage3.png");
+    SDL_Texture* wolf_texture = CreateTextureImg("Assets/images/wolf.png");
+    SDL_Texture* bat_texture = CreateTextureImg("Assets/images/bat.png");
+    SDL_Texture* golem_texture = CreateTextureImg("Assets/images/golem.png");
+    SDL_Texture* andromalius_texture = CreateTextureImg("Assets/images/andromalius2.png");
+    SDL_Texture* title_texture = CreateTextureImg("Assets/images/title.png");
 
     //Font
-    TTF_Font* font = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf", 128);
+    TTF_Font* font = TTF_OpenFont("Assets/fonts/GeoSlab703 Md BT Medium.ttf", 128);
     if (!font) {
         SDL_Log("Error loading font: %s", TTF_GetError());
         SDL_DestroyRenderer(g_renderer);
@@ -88,7 +88,7 @@ int main(int argc, char* argv[])
         TTF_Quit();
         SDL_Quit();
     }
-    TTF_Font* small_font = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf", 24);
+    TTF_Font* small_font = TTF_OpenFont("Assets/fonts/GeoSlab703 Md BT Medium.ttf", 24);
     if (!small_font) {
         SDL_Log("Error loading font: %s", TTF_GetError());
         SDL_DestroyRenderer(g_renderer);
@@ -96,7 +96,7 @@ int main(int argc, char* argv[])
         TTF_Quit();
         SDL_Quit();
     }
-    TTF_Font* small_font_card = TTF_OpenFont("Assets/GeoSlab703 Md BT Medium.ttf", 20);
+    TTF_Font* small_font_card = TTF_OpenFont("Assets/fonts/GeoSlab703 Md BT Medium.ttf", 20);
     if (!small_font) {
         SDL_Log("Error loading font: %s", TTF_GetError());
         SDL_DestroyRenderer(g_renderer);
@@ -143,7 +143,9 @@ int main(int argc, char* argv[])
             title_text.Update(g_renderer, small_font, "Press Enter to start", { 255, 255, 255 }, { 0, 0, 0 });
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - title_text.rect.h / 2 + 20, true);
 
-            LoadGame(SAVE_FILE, kill_count, wave);
+            if (!LoadGame(SAVE_FILE, kill_count, wave)) {
+                SaveGame(SAVE_FILE, 0, 0);
+            }
             title_text.Update(g_renderer, small_font, "Kill record: " + std::to_string(kill_count), { 0, 0, 0 }, { 255, 50, 50 });
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 + 360, true);
             title_text.Update(g_renderer, small_font, "Wave record: " + std::to_string(wave), { 0, 0, 0 }, { 255, 50, 50 });

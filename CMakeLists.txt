@@ -9,19 +9,19 @@ file(GLOB SRC_FILES ${SRC_DIR}/*.cpp)
 
 include_directories(
     ${CMAKE_SOURCE_DIR}/include
-    ${CMAKE_SOURCE_DIR}/SDL2-2.30.8/include
-    ${CMAKE_SOURCE_DIR}/SDL2_image-2.8.2/include
-    ${CMAKE_SOURCE_DIR}/SDL2_ttf-2.20.2/include
-    ${CMAKE_SOURCE_DIR}/SDL2_mixer-2.8.0/include
+    ${CMAKE_SOURCE_DIR}/engines/SDL2-2.30.8/include
+    ${CMAKE_SOURCE_DIR}/engines/SDL2_image-2.8.2/include
+    ${CMAKE_SOURCE_DIR}/engines/SDL2_ttf-2.20.2/include
+    ${CMAKE_SOURCE_DIR}/engines/SDL2_mixer-2.8.0/include
 )
 
 add_executable(GameSDL ${SRC_FILES})
 
 if(MSVC)
-    set(SDL2_LIB_DIR ${CMAKE_SOURCE_DIR}/SDL2-2.30.8/lib/x64)
-    set(SDL2_IMAGE_LIB_DIR ${CMAKE_SOURCE_DIR}/SDL2_image-2.8.2/lib/x64)
-    set(SDL2_TTF_LIB_DIR ${CMAKE_SOURCE_DIR}/SDL2_ttf-2.20.2/lib/x64)
-    set(SDL2_MIXER_LIB_DIR ${CMAKE_SOURCE_DIR}/SDL2_mixer-2.8.0/lib/x64)
+    set(SDL2_LIB_DIR ${CMAKE_SOURCE_DIR}/engines/SDL2-2.30.8/lib/x64)
+    set(SDL2_IMAGE_LIB_DIR ${CMAKE_SOURCE_DIR}/engines/SDL2_image-2.8.2/lib/x64)
+    set(SDL2_TTF_LIB_DIR ${CMAKE_SOURCE_DIR}/engines/SDL2_ttf-2.20.2/lib/x64)
+    set(SDL2_MIXER_LIB_DIR ${CMAKE_SOURCE_DIR}/engines/SDL2_mixer-2.8.0/lib/x64)
 
     target_link_directories(GameSDL PRIVATE ${SDL2_LIB_DIR} ${SDL2_IMAGE_LIB_DIR} ${SDL2_TTF_LIB_DIR} ${SDL2_MIXER_LIB_DIR})
     target_link_libraries(GameSDL PRIVATE SDL2main SDL2 SDL2_image SDL2_ttf SDL2_mixer)

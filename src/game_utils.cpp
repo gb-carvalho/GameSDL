@@ -17,7 +17,7 @@ void UpdateEnemyPosition(Enemy* enemy, SDL_Rect player_rect) {
 
     if (enemy->is_dead) return;
 
-    // Calcula a direção em que o inimigo deve se mover
+    // Calcula a direï¿½ï¿½o em que o inimigo deve se mover
     float diff_x = static_cast<float>(player_rect.x - enemy->rect_dst.x);
     float diff_y = static_cast<float>(player_rect.y - enemy->rect_dst.y);
 
@@ -27,26 +27,26 @@ void UpdateEnemyPosition(Enemy* enemy, SDL_Rect player_rect) {
     // Calcula a magnitude (comprimento do vetor)
     float magnitude = sqrt(diff_x * diff_x + diff_y * diff_y);
 
-    // Verifica se a magnitude é maior que zero antes de normalizar
+    // Verifica se a magnitude ï¿½ maior que zero antes de normalizar
     if (magnitude > 20) {
-        // Normaliza a direção e move o inimigo
+        // Normaliza a direï¿½ï¿½o e move o inimigo
         enemy->rect_dst.x += static_cast<int>((diff_x / magnitude) * enemy->speed);
         enemy->rect_dst.y += static_cast<int>((diff_y / magnitude) * enemy->speed);
     }
 }
 
 void UpdateFlameballProjectilePosition(Projectile* projectile, SDL_Rect enemy_rect) {
-    // Calcula a direção em que o inimigo deve se mover
+    // Calcula a direï¿½ï¿½o em que o inimigo deve se mover
     float diff_x = static_cast<float>(enemy_rect.x - projectile->rect_dst.x);
     float diff_y = static_cast<float>(enemy_rect.y - projectile->rect_dst.y);
 
     // Calcula a magnitude (comprimento do vetor)
     float magnitude = sqrt(diff_x * diff_x + diff_y * diff_y);
 
-    // Verifica se a magnitude é maior que zero antes de normalizar
+    // Verifica se a magnitude ï¿½ maior que zero antes de normalizar
 
     if (magnitude > 20) {
-        // Normaliza a direção e move o inimigo
+        // Normaliza a direï¿½ï¿½o e move o inimigo
         projectile->rect_dst.x += static_cast<int>((diff_x / magnitude) * projectile->speed);
         projectile->rect_dst.y += static_cast<int>((diff_y / magnitude) * projectile->speed);
     }
@@ -379,11 +379,11 @@ void randomizeCardArray() {
     std::vector<int> eligible_cards;
     std::vector<int> not_eligible_cards;
 
-    // Reserva espaço para evitar realocações
+    // Reserva espaï¿½o para evitar realocaï¿½ï¿½es
     eligible_cards.reserve(MAX_SIZE);
     not_eligible_cards.reserve(MAX_SIZE);
 
-    // Classifica as cartas em elegíveis e não elegíveis
+    // Classifica as cartas em elegï¿½veis e nï¿½o elegï¿½veis
     for (int i = 0; i < cards.size(); i++) {
         if (cards[i].level < 5)
             eligible_cards.push_back(i);
@@ -391,7 +391,7 @@ void randomizeCardArray() {
             not_eligible_cards.push_back(i);
     }
 
-    // Preenche com cartas de nível máximo caso necessário
+    // Preenche com cartas de nï¿½vel mï¿½ximo caso necessï¿½rio
     while (eligible_cards.size() < random_card_array.size()) {
         size_t random_index = rand() % not_eligible_cards.size();
         eligible_cards.push_back(not_eligible_cards[random_index]);
@@ -400,12 +400,12 @@ void randomizeCardArray() {
         not_eligible_cards.erase(not_eligible_cards.begin() + random_index);
     }
 
-    // Preenche random_card_array com cartas aleatórias
+    // Preenche random_card_array com cartas aleatï¿½rias
     for (int i = 0; i < random_card_array.size(); i++) {
         size_t random_index = rand() % eligible_cards.size();
         random_card_array[i] = eligible_cards[random_index];
 
-        // Remove a carta de eligible_cards para evitar repetições
+        // Remove a carta de eligible_cards para evitar repetiï¿½ï¿½es
         eligible_cards.erase(eligible_cards.begin() + random_index);
     }
 }
@@ -418,20 +418,21 @@ void NewWave(int& current_game_state, int& wave, bool& skip) {
 }
 
 
-void LoadGame(const std::string& file_name, int& kill_count, int& wave)
+bool LoadGame(const std::string& file_name, int& kill_count, int& wave)
 {
     std::ifstream save_file(file_name, std::ios::binary);
     if (!save_file.is_open()) {
         SDL_Log("Error opening save file\n");
         kill_count = 0;
         wave = 0;
-        return;
+        return false;
     }
 
     save_file.read(reinterpret_cast<char*>(&kill_count), sizeof(kill_count));
     save_file.read(reinterpret_cast<char*>(&wave), sizeof(wave));
 
     save_file.close();
+    return true;
 }
 
 void SaveGame(const std::string& file_name, int kill_count, int wave)

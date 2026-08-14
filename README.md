@@ -39,7 +39,7 @@ Para compilar e rodar o GameSDL, você precisará dos seguintes componentes:
 
 ## Como Compilar e Executar
 
-### Windows (Visual Studio)
+### Windows (VS Code + CMake)
 
 1.  Clone o repositório:
     
@@ -48,23 +48,43 @@ Para compilar e rodar o GameSDL, você precisará dos seguintes componentes:
     cd GameSDL
     ```
     
-2.  Abra o arquivo `GameSDL.sln` no Visual Studio.
+2.  Abra a pasta no VS Code.
     
-3.  Compile o projeto e execute.
+3.  Execute a task de build do CMake ou rode manualmente:
+
+    ```powershell
+    cmake -S . -B build -A x64
+    cmake --build build --config Debug
+    ```
+
+4.  O executável será gerado em `build/Debug/GameSDL.exe`.
     
 
 ## Estrutura do Projeto
 
 ```
 GameSDL/
-├── Assets/         # Recursos visuais e de áudio do jogo
-├── include/        # Cabeçalhos (.h) utilizados no projeto
-├── src/            # Código-fonte do jogo
-├── GameSDL.sln     # Solução do Visual Studio
-├── GameSDL.vcxproj # Arquivo de projeto do Visual Studio
-├── resources.rc    # Recursos do Windows (como ícones)
-├── .gitignore      # Arquivo para ignorar arquivos desnecessários no Git
-├── README.md       # Documentação do projeto
+├── Assets/
+│   ├── audio/
+│   ├── fonts/
+│   ├── images/
+│   ├── legacy/
+│   ├── inspiration/
+│   └── license/
+├── engines/
+│   ├── SDL2-2.30.8/
+│   ├── SDL2_image-2.8.2/
+│   ├── SDL2_mixer-2.8.0/
+│   └── SDL2_ttf-2.20.2/
+├── include/
+├── src/
+├── build/
+├── CMakeLists.txt
+├── .vscode/
+├── .gitignore
+├── LICENSE
+├── README.md
+└── README_VSCODE_BUILD.md
 ```
 
 ## Licença
