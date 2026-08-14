@@ -9,11 +9,14 @@
                 "${workspaceFolder}/SDL2_ttf-2.20.2/include",
                 "${workspaceFolder}/SDL2_mixer-2.8.0/include"
             ],
-            "defines": ["WIN32", "_WINDOWS"],
-            "compilerPath": "cl.exe",
+            "defines": [
+                "WIN32",
+                "_WINDOWS"
+            ],
+            "compilerPath": "C:/Program Files (x86)/mingw32/bin/g++.exe",
             "cStandard": "c11",
             "cppStandard": "c++17",
-            "intelliSenseMode": "windows-msvc-x64"
+            "intelliSenseMode": "windows-gcc-x86"
         }
     ],
     "version": 4
