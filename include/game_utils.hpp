@@ -22,7 +22,7 @@ extern Uint32 last_enemy_time;
 
 extern std::vector<int> random_card_array;
 extern Enemy enemies[MAX_ENEMIES];
-enum gameState { TITLE_SCREEN, PLAYING, CARD_SELECTOR, GAME_OVER, PAUSE };
+enum gameState { TITLE_SCREEN, HIGH_SCORE_SCREEN, PLAYING, CARD_SELECTOR, GAME_OVER, PAUSE };
 
 void LevelUp(SDL_Renderer* g_renderer, Character& character, int& current_game_state, TTF_Font* font, DynamicText* level_text);
 void UpdateEnemyPosition(Enemy* enemy, SDL_Rect player_rect);

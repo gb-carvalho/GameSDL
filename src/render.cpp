@@ -8,20 +8,20 @@ void RenderProjectiles(SDL_Rect camera)
     for (int i = 0; i < MAX_PROJECTILES; i++) {
         if (projectiles[i].is_active) {
             SDL_Rect render_rect = {
-                projectiles[i].rect_dst.x - camera.x, // Ajusta a posição X com base na câmera
-                projectiles[i].rect_dst.y - camera.y, // Ajusta a posição Y com base na câmera
+                projectiles[i].rect_dst.x - camera.x, // Ajusta a posiï¿½ï¿½o X com base na cï¿½mera
+                projectiles[i].rect_dst.y - camera.y, // Ajusta a posiï¿½ï¿½o Y com base na cï¿½mera
                 projectiles[i].rect_dst.w,
                 projectiles[i].rect_dst.h
             };
 
             if (projectiles[i].type == FLAMEPILLAR) {
-                const int spawn_duration = 15; // Duração do efeito de spawn, em frames.
-                int frames_active = projectiles[i].frames_active; // Contador de frames do projétil.
+                const int spawn_duration = 15; // Duraï¿½ï¿½o do efeito de spawn, em frames.
+                int frames_active = projectiles[i].frames_active; // Contador de frames do projï¿½til.
 
                 if (frames_active < spawn_duration) {
                     float progress = (float)frames_active / spawn_duration;
 
-                    // Faz o projétil surgir de baixo ajustando sua altura e posição Y.
+                    // Faz o projï¿½til surgir de baixo ajustando sua altura e posiï¿½ï¿½o Y.
                     render_rect.h = (int)(projectiles[i].rect_dst.h * progress);
                     render_rect.y += projectiles[i].rect_dst.h - render_rect.h;
                 }
@@ -105,7 +105,7 @@ void RenderLifeBar(Character character, SDL_Rect camera)
     int barX = character.rect_dst.x + (character.rect_dst.w / 2) - (barWidth / 2);
     int barY = character.rect_dst.y + character.rect_dst.h + offset;
 
-    // retângulo da borda
+    // retï¿½ngulo da borda
     SDL_Rect barRect = {
         barX - camera.x,
         barY - camera.y,
@@ -128,6 +128,64 @@ void RenderLifeBar(Character character, SDL_Rect camera)
 
     SDL_SetRenderDrawColor(g_renderer, 139, 0, 0, 255);
     SDL_RenderFillRect(g_renderer, &filledRect);
+}
+
+int GetHoveredMenuIndex(const SDL_Point& mouse_pos, int start_x, int start_y, TTF_Font* font)
+{
+    int y = start_y;
+    for (size_t index = 0; index < menuOptions.size(); ++index) {
+        int text_width = 0;
+        int text_height = 0;
+        TTF_SizeText(font, menuOptions[index].name.c_str(), &text_width, &text_height);
+
+        SDL_Rect item_rect = { start_x, y, text_width, text_height };
+        if (mouse_pos.x >= item_rect.x && mouse_pos.x <= item_rect.x + item_rect.w &&
+            mouse_pos.y >= item_rect.y && mouse_pos.y <= item_rect.y + item_rect.h) {
+            return static_cast<int>(index);
+        }
+
+        y += TTF_FontLineSkip(font) + 12;
+    }
+
+    return -1;
+}
+
+int GetHoveredCardIndex(int mouse_x, int mouse_y, int screen_width, int screen_height)
+{
+    int spacing = CARD_WIDTH / 4;
+    int total_width = CARDS_TO_CHOSE * (CARD_WIDTH / 2);
+    int start_x = (screen_height / 2) - (total_width / 8);
+
+    for (int i = 0; i < CARDS_TO_CHOSE; ++i) {
+        SDL_Rect card_rect = {
+            start_x + i * (CARD_WIDTH / 2 + spacing),
+            (screen_height / 2) - (CARD_HEIGHT / 4),
+            CARD_WIDTH / 2,
+            CARD_HEIGHT / 2
+        };
+
+        if (mouse_x >= card_rect.x && mouse_x <= card_rect.x + card_rect.w &&
+            mouse_y >= card_rect.y && mouse_y <= card_rect.y + card_rect.h) {
+            return i;
+        }
+    }
+
+    return -1;
+}
+
+void RenderMenu(SDL_Renderer* renderer, int x, int y, TTF_Font* font, int selected_index){
+    int current_y = y;
+
+    for (size_t i = 0; i < menuOptions.size(); ++i) {
+        auto& item = menuOptions[i];
+        SDL_Color color = (static_cast<int>(i) == selected_index) ? item.selected_color : item.text_color;
+
+        DynamicText menu_text;
+        menu_text.Update(renderer, font, item.name, color, { 0, 0, 0 });
+        menu_text.Render(renderer, x, current_y, true);
+        current_y += menu_text.rect.h + 16;
+    }
+    return;
 }
 
 void DrawThickRect(SDL_Renderer* renderer, SDL_Rect* rect, int thickness)
@@ -154,7 +212,7 @@ void RenderCardInfo(const Card& card, TTF_Font* font, int screen_width, int scre
         card.rect_dst.x + (card.rect_dst.w / 2) - card_name_text.rect.w / 2,
         card.rect_dst.y + (card.rect_dst.h / 4), true);
 
-    // Renderizar a descrição do card
+    // Renderizar a descriï¿½ï¿½o do card
     DynamicText card_description_text;
     card_description_text.Update(g_renderer, font, card.description, text_color, shadow_color);
     card_description_text.Render(g_renderer,
@@ -162,7 +220,7 @@ void RenderCardInfo(const Card& card, TTF_Font* font, int screen_width, int scre
         card.rect_dst.y + (card.rect_dst.h / 2), true);
 }
 
-void RenderCardSelection(int card_selected, TTF_Font* small_font, int screen_width, int screen_height, int level_to_update)
+void RenderCardSelection(int card_selected, TTF_Font* small_font, int screen_width, int screen_height, int level_to_update, int hovered_card_index)
 {
     SDL_Color text_color = { 255, 255, 255 };
     SDL_Color shadow_color = { 0, 0, 0 };
@@ -173,7 +231,6 @@ void RenderCardSelection(int card_selected, TTF_Font* small_font, int screen_wid
         screen_height / 2 - (CARD_WIDTH / 2), true);
 
     for (int i = 0; i < CARDS_TO_CHOSE; i++) {
-
         int card_number = random_card_array[i];
         int spacing = CARD_WIDTH / 4;
         int total_width = CARDS_TO_CHOSE * (CARD_WIDTH / 2);
@@ -186,12 +243,21 @@ void RenderCardSelection(int card_selected, TTF_Font* small_font, int screen_wid
                                 CARD_HEIGHT / 2 };
         cards[card_number].texture = nullptr;
 
-        SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 100);
+        if (i == hovered_card_index) {
+            SDL_SetRenderDrawColor(g_renderer, 55, 70, 95, 180);
+        }
+        else if (i == card_selected) {
+            SDL_SetRenderDrawColor(g_renderer, 85, 20, 20, 180);
+        }
+        else {
+            SDL_SetRenderDrawColor(g_renderer, 20, 25, 35, 160);
+        }
         SDL_RenderFillRect(g_renderer, &cards[card_number].rect_dst);
         RenderCardInfo(cards[card_number], small_font, screen_width, screen_height);
-        if (i == card_selected) {
-            SDL_SetRenderDrawColor(g_renderer, 255, 0, 0, 100);
-            DrawThickRect(g_renderer, &cards[card_number].rect_dst, 5);
+
+        if (i == hovered_card_index || i == card_selected) {
+            SDL_SetRenderDrawColor(g_renderer, 120, 120, 120, 180);
+            DrawThickRect(g_renderer, &cards[card_number].rect_dst, 4);
         }
     }
 }
@@ -218,9 +284,9 @@ SDL_Texture* CreateTextureImg(const char* image_path)
         return NULL;
     }
 
-    // Cria a textura a partir da superfície da imagem
+    // Cria a textura a partir da superfï¿½cie da imagem
     SDL_Texture* texture = SDL_CreateTextureFromSurface(g_renderer, image_surface);
-    SDL_FreeSurface(image_surface);  // Liberar a superfície da memória
+    SDL_FreeSurface(image_surface);  // Liberar a superfï¿½cie da memï¿½ria
 
     if (!texture) {
         SDL_Log("Error creating texture: %s", SDL_GetError());
@@ -235,11 +301,11 @@ SDL_Texture* CreateTextureImg(const char* image_path)
 
 void UpdateCamera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect character_rect_dst, int bg_width, int bg_height, int screen_width, int screen_height)
 {
-    // Centralizar a câmera no jogador
+    // Centralizar a cï¿½mera no jogador
     camera->x = playerX + character_rect_dst.w / 2 - screen_width / 2;
     camera->y = playerY + character_rect_dst.h / 2 - screen_height / 2;
 
-    // Limitar a câmera para não sair dos limites do mundo
+    // Limitar a cï¿½mera para nï¿½o sair dos limites do mundo
     if (camera->x < 0) camera->x = 0;
     if (camera->y < 0) camera->y = 0;
     if (camera->x > bg_width - camera->w) camera->x = bg_width - camera->w;

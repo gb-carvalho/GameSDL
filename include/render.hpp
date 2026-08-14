@@ -11,6 +11,7 @@
 #include "dynamic_text.hpp"
 #include "render.hpp"
 #include "game_utils.hpp"
+#include "menu.hpp"
 
 extern SDL_Window* g_window ;
 extern SDL_Renderer* g_renderer;
@@ -22,9 +23,12 @@ void UpdateRenderStopwatchWave(int& start_time, int& time_left, int screen_width
 void RenderExpBar(int screen_width, float exp);
 void RenderLifeBar(Character character, SDL_Rect camera);
 void DrawThickRect(SDL_Renderer* renderer, SDL_Rect* rect, int thickness);
-void RenderCardSelection(int card_selected, TTF_Font* small_font, int screen_width, int screen_height, int level_to_update);
+void RenderCardSelection(int card_selected, TTF_Font* small_font, int screen_width, int screen_height, int level_to_update, int hovered_card_index);
 void RenderHeader(int& start_time, int& time_left, int screen_width, int& elapsed_time, int& wave, int& current_game_state, 
                   TTF_Font* small_font, Character character, int total_pause_duration,
                   DynamicText* stopwatch_text, DynamicText* life_text, DynamicText* kill_count_text, DynamicText* level_text);
+void RenderMenu(SDL_Renderer* renderer, int x, int y, TTF_Font* font, int selected_index);
+int GetHoveredMenuIndex(const SDL_Point& mouse_pos, int start_x, int start_y, TTF_Font* font);
+int GetHoveredCardIndex(int mouse_x, int mouse_y, int screen_width, int screen_height);
 SDL_Texture* CreateTextureImg(const char* image_path);
 void UpdateCamera(int playerX, int playerY, SDL_Rect* camera, SDL_Rect character_rect_dst, int bg_width, int bg_height, int screen_width, int screen_height);

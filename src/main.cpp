@@ -17,6 +17,7 @@
 #include "collision.hpp"
 #include "game_utils.hpp"
 #include "render.hpp"
+#include <ctime>
 
 int main(int argc, char* argv[]) 
 {
@@ -109,6 +110,8 @@ int main(int argc, char* argv[])
     srand(static_cast<unsigned int>(time(nullptr)));
 
     int card_selected = 1;
+    int hovered_card_index = -1;
+    int selected_menu_index = 0;
     SDL_Event event;
     bool running = true;
     int current_game_state = TITLE_SCREEN;
@@ -116,13 +119,193 @@ int main(int argc, char* argv[])
     bool key_pressed = false, skip = false, new_record = false, all_levels_are_five;
     DynamicText life_text, level_text, title_text, pause_text, kill_count_text, stopwatch_text;
 
+    auto handle_title_screen_events = [&](const SDL_Event& event) {
+        if (event.type == SDL_QUIT) {
+            running = false;
+        }
+        else if (event.type == SDL_MOUSEMOTION) {
+            SDL_Point mouse_pos = { event.motion.x, event.motion.y };
+            int menu_x = screen_width / 2 - title_text.rect.w / 2;
+            int menu_y = screen_height / 2 - title_text.rect.h / 2 + 20;
+            int hovered_index = GetHoveredMenuIndex(mouse_pos, menu_x, menu_y, small_font);
+            if (hovered_index >= 0) {
+                selected_menu_index = hovered_index;
+            }
+        }
+        else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+            SDL_Point mouse_pos = { event.button.x, event.button.y };
+            int menu_x = screen_width / 2 - title_text.rect.w / 2;
+            int menu_y = screen_height / 2 - title_text.rect.h / 2 + 20;
+            int hovered_index = GetHoveredMenuIndex(mouse_pos, menu_x, menu_y, small_font);
+            if (hovered_index == 0) {
+                ResetGame(kill_count, wave, &character, bg_width, bg_height, start_time, elapsed_time, small_font, total_pause_duration,
+                          &stopwatch_text, &life_text, &kill_count_text, &level_text);
+                current_game_state = PLAYING;
+            }
+            else if (hovered_index == 1) {
+                current_game_state = HIGH_SCORE_SCREEN;
+                selected_menu_index = 0;
+            }
+            else if (hovered_index == 2) {
+                running = false;
+            }
+        }
+        else if (event.type == SDL_KEYDOWN && !key_pressed) {
+            key_pressed = true;
+            switch (event.key.keysym.scancode) {
+            case SDL_SCANCODE_UP:
+            case SDL_SCANCODE_W:
+                selected_menu_index = (selected_menu_index - 1 + static_cast<int>(menuOptions.size())) % static_cast<int>(menuOptions.size());
+                break;
+            case SDL_SCANCODE_DOWN:
+            case SDL_SCANCODE_S:
+                selected_menu_index = (selected_menu_index + 1) % static_cast<int>(menuOptions.size());
+                break;
+            case SDL_SCANCODE_RETURN:
+                if (selected_menu_index == 0) {
+                    ResetGame(kill_count, wave, &character, bg_width, bg_height, start_time, elapsed_time, small_font, total_pause_duration,
+                              &stopwatch_text, &life_text, &kill_count_text, &level_text);
+                    current_game_state = PLAYING;
+                }
+                else if (selected_menu_index == 1) {
+                    current_game_state = HIGH_SCORE_SCREEN;
+                    selected_menu_index = 0;
+                }
+                else if (selected_menu_index == 2) {
+                    running = false;
+                }
+                break;
+            default:
+                break;
+            }
+        }
+        else if (event.type == SDL_KEYUP) {
+            key_pressed = false;
+        }
+    };
+
+    auto handle_high_score_events = [&](const SDL_Event& event) {
+        if (event.type == SDL_QUIT) {
+            running = false;
+        }
+        else if (event.type == SDL_KEYDOWN && !key_pressed) {
+            key_pressed = true;
+            if (event.key.keysym.scancode == SDL_SCANCODE_ESCAPE || event.key.keysym.scancode == SDL_SCANCODE_RETURN) {
+                current_game_state = TITLE_SCREEN;
+            }
+        }
+        else if (event.type == SDL_KEYUP) {
+            key_pressed = false;
+        }
+        else if (event.type == SDL_MOUSEMOTION) {
+            SDL_Point mouse_pos = { event.motion.x, event.motion.y };
+            SDL_Rect back_rect = { screen_width / 2 - 160, screen_height / 2 + 180, 320, 50 };
+            if (mouse_pos.x >= back_rect.x && mouse_pos.x <= back_rect.x + back_rect.w &&
+                mouse_pos.y >= back_rect.y && mouse_pos.y <= back_rect.y + back_rect.h) {
+                selected_menu_index = 0;
+            }
+            else {
+                selected_menu_index = -1;
+            }
+        }
+        else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+            SDL_Point mouse_pos = { event.button.x, event.button.y };
+            SDL_Rect back_rect = { screen_width / 2 - 160, screen_height / 2 + 180, 320, 50 };
+            if (mouse_pos.x >= back_rect.x && mouse_pos.x <= back_rect.x + back_rect.w &&
+                mouse_pos.y >= back_rect.y && mouse_pos.y <= back_rect.y + back_rect.h) {
+                current_game_state = TITLE_SCREEN;
+            }
+        }
+    };
+
+    auto handle_card_selection_events = [&](const SDL_Event& event) {
+        if (event.type == SDL_QUIT) {
+            running = false;
+        }
+        else if (event.type == SDL_MOUSEMOTION) {
+            hovered_card_index = GetHoveredCardIndex(event.motion.x, event.motion.y, screen_width, screen_height);
+            if (hovered_card_index >= 0) {
+                card_selected = hovered_card_index;
+            }
+        }
+        else if (event.type == SDL_MOUSEBUTTONDOWN && event.button.button == SDL_BUTTON_LEFT) {
+            hovered_card_index = GetHoveredCardIndex(event.button.x, event.button.y, screen_width, screen_height);
+            if (hovered_card_index >= 0) {
+                if (cards[random_card_array[hovered_card_index]].level < 5) {
+                    SelectCard(cards[random_card_array[hovered_card_index]].name, character, small_font, &life_text);
+                    cards[random_card_array[hovered_card_index]].level++;
+                    character.level_to_update--;
+                    randomizeCardArray();
+                    card_selected = 0;
+                    hovered_card_index = -1;
+                }
+            }
+        }
+        else if (event.type == SDL_KEYDOWN && !key_pressed) {
+            key_pressed = true;
+            switch (event.key.keysym.scancode) {
+            case SDL_SCANCODE_RETURN:
+                all_levels_are_five = true;
+                for (int i = 0; i < random_card_array.size(); ++i) {
+                    if (cards[random_card_array[i]].level != 5) {
+                        all_levels_are_five = false;
+                        break;
+                    }
+                }
+
+                if (all_levels_are_five) {
+                    skip = true;
+                    break;
+                }
+
+                if (cards[random_card_array[card_selected]].level < 5) {
+                    SelectCard(cards[random_card_array[card_selected]].name, character, small_font, &life_text);
+                    cards[random_card_array[card_selected]].level++;
+                    character.level_to_update--;
+                    randomizeCardArray();
+                }
+                break;
+
+            case SDL_SCANCODE_A:
+            case SDL_SCANCODE_LEFT:
+                card_selected = (card_selected - 1 + static_cast<int>(random_card_array.size())) % static_cast<int>(random_card_array.size());
+                break;
+
+            case SDL_SCANCODE_D:
+            case SDL_SCANCODE_RIGHT:
+                card_selected = (card_selected + 1) % static_cast<int>(random_card_array.size());
+                break;
+
+            default:
+                break;
+            }
+        }
+        else if (event.type == SDL_KEYUP) {
+            key_pressed = false;
+        }
+    };
+
     while (running) {
 
         const Uint8* keyState = SDL_GetKeyboardState(NULL);
 
-        if (current_game_state != CARD_SELECTOR) {
+        if (current_game_state == TITLE_SCREEN) {
             while (SDL_PollEvent(&event)) {
-                // Verificar se o jogo foi fechado
+                handle_title_screen_events(event);
+            }
+        }
+        else if (current_game_state == HIGH_SCORE_SCREEN) {
+            while (SDL_PollEvent(&event)) {
+                handle_high_score_events(event);
+            }
+        }
+        else if (current_game_state == CARD_SELECTOR) {
+            while (SDL_PollEvent(&event)) {
+                handle_card_selection_events(event);
+            }
+        }
+        else if (current_game_state != CARD_SELECTOR) {
+            while (SDL_PollEvent(&event)) {
                 if (event.type == SDL_QUIT) {
                     running = false;
                 }
@@ -130,7 +313,7 @@ int main(int argc, char* argv[])
         }
 
         switch (current_game_state) {
-        case TITLE_SCREEN:
+        case TITLE_SCREEN: {
             SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
             SDL_RenderClear(g_renderer);
 
@@ -140,23 +323,34 @@ int main(int argc, char* argv[])
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 4 - title_text.rect.h / 2, true);
             title_text.Update(g_renderer, small_font, "Portals of Eternity", { 0, 0, 0 }, { 255, 255, 255 });
             title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 4 - title_text.rect.h / 2 + 60, true);
-            title_text.Update(g_renderer, small_font, "Press Enter to start", { 255, 255, 255 }, { 0, 0, 0 });
-            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - title_text.rect.h / 2 + 20, true);
+
+            RenderMenu(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - title_text.rect.h / 2 + 20, small_font, selected_menu_index);
+            break;
+        }
+
+        case HIGH_SCORE_SCREEN: {
+            SDL_SetRenderDrawColor(g_renderer, 0, 0, 0, 255);
+            SDL_RenderClear(g_renderer);
+            SDL_RenderCopy(g_renderer, title_texture, nullptr, nullptr);
 
             if (!LoadGame(SAVE_FILE, kill_count, wave)) {
                 SaveGame(SAVE_FILE, 0, 0);
             }
-            title_text.Update(g_renderer, small_font, "Kill record: " + std::to_string(kill_count), { 0, 0, 0 }, { 255, 50, 50 });
-            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 + 360, true);
-            title_text.Update(g_renderer, small_font, "Wave record: " + std::to_string(wave), { 0, 0, 0 }, { 255, 50, 50 });
-            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 + 390, true);
 
-            if (keyState[SDL_SCANCODE_RETURN]) {
-                ResetGame(kill_count, wave, &character, bg_width, bg_height, start_time, elapsed_time, small_font, total_pause_duration, 
-                          &stopwatch_text, &life_text, &kill_count_text, &level_text);
-                current_game_state = PLAYING;
-            }
+            title_text.Update(g_renderer, font, "Highest Score", { 255, 255, 255 }, { 0, 0, 0 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 5, true);
+            title_text.Update(g_renderer, small_font, "Kills: " + std::to_string(kill_count), { 255, 220, 90 }, { 0, 0, 0 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 - 40, true);
+            title_text.Update(g_renderer, small_font, "Wave: " + std::to_string(wave), { 255, 220, 90 }, { 0, 0, 0 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 + 20, true);
+
+            SDL_Rect back_rect = { screen_width / 2 - 160, screen_height / 2 + 180, 320, 50 };
+            SDL_SetRenderDrawColor(g_renderer, selected_menu_index == 0 ? 60 : 30, selected_menu_index == 0 ? 70 : 40, selected_menu_index == 0 ? 80 : 50, 200);
+            SDL_RenderFillRect(g_renderer, &back_rect);
+            title_text.Update(g_renderer, small_font, "Back to Menu", { 255, 255, 255 }, { 0, 0, 0 });
+            title_text.Render(g_renderer, screen_width / 2 - title_text.rect.w / 2, screen_height / 2 + 190, true);
             break;
+        }
 
         case PLAYING: {
 
@@ -254,64 +448,11 @@ int main(int argc, char* argv[])
                 SDL_RenderCopy(g_renderer, bg_texture, &camera, nullptr);
                 RenderHeader(start_time, time_left, screen_width, elapsed_time, wave, current_game_state, small_font, character, total_pause_duration,
                              &stopwatch_text, &life_text, &kill_count_text, &level_text);
-                RenderCardSelection(card_selected, small_font_card, screen_width, screen_height, character.level_to_update);
+                RenderCardSelection(card_selected, small_font_card, screen_width, screen_height, character.level_to_update, hovered_card_index);
             }
-
-            while (SDL_PollEvent(&event)) {
-                if (event.type == SDL_QUIT) {
-                    running = false;
-                }
-                else if (event.type == SDL_KEYDOWN && !key_pressed) {
-                    key_pressed = true;
-                    switch (event.key.keysym.scancode) {
-                    case SDL_SCANCODE_RETURN:
-                        all_levels_are_five = true;
-                        for (int i = 0; i < random_card_array.size(); ++i) {
-                            if (cards[random_card_array[i]].level != 5) {
-                                all_levels_are_five = false;
-                                break;
-                            }
-                        }
-
-                        if (all_levels_are_five) {
-                            skip = true;
-                            break;
-                        }
-
-                        if (skip) current_game_state = PLAYING;
-
-                        if (cards[random_card_array[card_selected]].level < 5) {
-                            SelectCard(cards[random_card_array[card_selected]].name, character, small_font, &life_text);
-                            cards[random_card_array[card_selected]].level++;
-                            character.level_to_update--;
-                            randomizeCardArray();
-                        }
-                        break;
-
-                    case SDL_SCANCODE_A:
-                    case SDL_SCANCODE_LEFT:
-                        card_selected = (card_selected - 1 + CARDS_TO_CHOSE) % CARDS_TO_CHOSE;  // Loop circular
-                        break;
-
-                    case SDL_SCANCODE_D:
-                    case SDL_SCANCODE_RIGHT:
-                        card_selected = (card_selected + 1) % CARDS_TO_CHOSE;  // Loop circular
-                        break;
-
-                    default:
-                        break;
-                    }
-                }
-                else if (event.type == SDL_KEYUP) {
-                    key_pressed = false;
-                }
-            }
-
             break;
         }
         case GAME_OVER: {
-
-
             int kill_count_save_file, wave_save_file;
             LoadGame("sdl.dat", kill_count_save_file, wave_save_file);
             if (kill_count > kill_count_save_file || wave > wave_save_file) new_record = true;
@@ -343,8 +484,7 @@ int main(int argc, char* argv[])
             }
             break;
         }
-        case PAUSE:
-
+        case PAUSE: {
             if (pause_start_time == 0) pause_start_time = SDL_GetTicks();
 
             title_text.Update(g_renderer, font, "Paused", { 238, 173, 45 }, { 0, 0, 0 });
@@ -366,6 +506,7 @@ int main(int argc, char* argv[])
                 current_game_state = PLAYING;
             }
             break;
+        }
         }
         // Apresenta o conteúdo renderizado
         SDL_RenderPresent(g_renderer);
